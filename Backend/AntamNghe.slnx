@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="AntamNghe.Domain/AntamNghe.Domain.csproj" />
+  <Project Path="AntamNghe.Infrastructure/AntamNghe.Infrastructure.csproj" />
+  <Project Path="AntamNghe.WebAdmin/AntamNghe.WebAdmin.csproj" />
+  <Project Path="AntamNghe/AntamNghe.csproj" />
+</Solution>

@@ -1,0 +1,22 @@
+﻿@model AntamNghe.WebAdmin.Models.DashboardViewModel
+
+<h2>Dashboard</h2>
+
+<div style="display:flex; gap:20px;">
+
+    <div style="background:#ff4d4d; padding:20px; color:white;">
+        <h3>Total Spam</h3>
+        <h1>@Model.TotalSpam</h1>
+    </div>
+
+    <div style="background:#4da6ff; padding:20px; color:white;">
+        <h3>Total Calls</h3>
+        <h1>@Model.TotalCalls</h1>
+    </div>
+
+    <div style="background:#33cc33; padding:20px; color:white;">
+        <h3>Total Reports</h3>
+        <h1>@Model.TotalReports</h1>
+    </div>
+
+</div>

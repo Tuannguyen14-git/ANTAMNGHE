@@ -1,0 +1,6 @@
+@AntamNghe_HostAddress = http://localhost:5195
+
+GET {{AntamNghe_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,30 @@
+﻿@model List<AntamNghe.WebAdmin.Models.SpamNumber>
+
+<h2>Spam Numbers</h2>
+
+<a href="/Spam/Create" class="btn btn-primary">Add Spam</a>
+
+<table class="table">
+
+    <tr>
+        <th>Phone</th>
+        <th>Type</th>
+        <th>Report</th>
+        <th>Action</th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@item.Phone</td>
+            <td>@item.Type</td>
+            <td>@item.ReportCount</td>
+
+            <td>
+                <a href="/Spam/Edit/@item.Id" class="btn btn-warning">Edit</a>
+                <a href="/Spam/Delete/@item.Id" class="btn btn-danger">Delete</a>
+            </td>
+        </tr>
+    }
+
+</table>

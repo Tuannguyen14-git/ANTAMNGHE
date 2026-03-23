@@ -1,0 +1,168 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\HocTap\\AntamNghe\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{57174763-80C0-C0AF-B688-5C772B6DA902}|AntamNghe.WebAdmin\\AntamNghe.WebAdmin.csproj|c:\\hoctap\\antamnghe\\antamnghe.webadmin\\models\\calllog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{57174763-80C0-C0AF-B688-5C772B6DA902}|AntamNghe.WebAdmin\\AntamNghe.WebAdmin.csproj|solutionrelative:antamnghe.webadmin\\models\\calllog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\HocTap\\AntamNghe\\AntamNghe.Infrastructure\\Migrations\\20260320055218_AddPhoneToUser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:AntamNghe.Infrastructure\\Migrations\\20260320055218_AddPhoneToUser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{57174763-80C0-C0AF-B688-5C772B6DA902}|AntamNghe.WebAdmin\\AntamNghe.WebAdmin.csproj|c:\\hoctap\\antamnghe\\antamnghe.webadmin\\views\\dashboard\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{57174763-80C0-C0AF-B688-5C772B6DA902}|AntamNghe.WebAdmin\\AntamNghe.WebAdmin.csproj|solutionrelative:antamnghe.webadmin\\views\\dashboard\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{57174763-80C0-C0AF-B688-5C772B6DA902}|AntamNghe.WebAdmin\\AntamNghe.WebAdmin.csproj|c:\\hoctap\\antamnghe\\antamnghe.webadmin\\controllers\\dashboardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{57174763-80C0-C0AF-B688-5C772B6DA902}|AntamNghe.WebAdmin\\AntamNghe.WebAdmin.csproj|solutionrelative:antamnghe.webadmin\\controllers\\dashboardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{57174763-80C0-C0AF-B688-5C772B6DA902}|AntamNghe.WebAdmin\\AntamNghe.WebAdmin.csproj|c:\\hoctap\\antamnghe\\antamnghe.webadmin\\models\\dashboardviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{57174763-80C0-C0AF-B688-5C772B6DA902}|AntamNghe.WebAdmin\\AntamNghe.WebAdmin.csproj|solutionrelative:antamnghe.webadmin\\models\\dashboardviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{57174763-80C0-C0AF-B688-5C772B6DA902}|AntamNghe.WebAdmin\\AntamNghe.WebAdmin.csproj|c:\\hoctap\\antamnghe\\antamnghe.webadmin\\views\\calllog\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{57174763-80C0-C0AF-B688-5C772B6DA902}|AntamNghe.WebAdmin\\AntamNghe.WebAdmin.csproj|solutionrelative:antamnghe.webadmin\\views\\calllog\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{57174763-80C0-C0AF-B688-5C772B6DA902}|AntamNghe.WebAdmin\\AntamNghe.WebAdmin.csproj|c:\\hoctap\\antamnghe\\antamnghe.webadmin\\controllers\\calllogcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{57174763-80C0-C0AF-B688-5C772B6DA902}|AntamNghe.WebAdmin\\AntamNghe.WebAdmin.csproj|solutionrelative:antamnghe.webadmin\\controllers\\calllogcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\HocTap\\AntamNghe\\AntamNghe.Domain\\Entities\\User.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:AntamNghe.Domain\\Entities\\User.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\HocTap\\AntamNghe\\AntamNghe\\Controllers\\AuthController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:AntamNghe\\Controllers\\AuthController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 9,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:1:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "20260320055218_AddPhoneToUser.cs",
+              "DocumentMoniker": "C:\\HocTap\\AntamNghe\\AntamNghe.Infrastructure\\Migrations\\20260320055218_AddPhoneToUser.cs",
+              "RelativeDocumentMoniker": "AntamNghe.Infrastructure\\Migrations\\20260320055218_AddPhoneToUser.cs",
+              "ToolTip": "C:\\HocTap\\AntamNghe\\AntamNghe.Infrastructure\\Migrations\\20260320055218_AddPhoneToUser.cs",
+              "RelativeToolTip": "AntamNghe.Infrastructure\\Migrations\\20260320055218_AddPhoneToUser.cs",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-20T05:52:18.664Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "User.cs",
+              "DocumentMoniker": "C:\\HocTap\\AntamNghe\\AntamNghe.Domain\\Entities\\User.cs",
+              "RelativeDocumentMoniker": "AntamNghe.Domain\\Entities\\User.cs",
+              "ToolTip": "C:\\HocTap\\AntamNghe\\AntamNghe.Domain\\Entities\\User.cs",
+              "RelativeToolTip": "AntamNghe.Domain\\Entities\\User.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAgwA0AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-20T03:46:00.608Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "C:\\HocTap\\AntamNghe\\AntamNghe\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "AntamNghe\\Controllers\\AuthController.cs",
+              "ToolTip": "C:\\HocTap\\AntamNghe\\AntamNghe\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "AntamNghe\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAAAcAAAAAAAAAAAAmwCYAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-20T03:40:32.213Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "C:\\HocTap\\AntamNghe\\AntamNghe.WebAdmin\\Views\\Dashboard\\Index.cshtml",
+              "RelativeDocumentMoniker": "AntamNghe.WebAdmin\\Views\\Dashboard\\Index.cshtml",
+              "ToolTip": "C:\\HocTap\\AntamNghe\\AntamNghe.WebAdmin\\Views\\Dashboard\\Index.cshtml",
+              "RelativeToolTip": "AntamNghe.WebAdmin\\Views\\Dashboard\\Index.cshtml",
+              "ViewState": "AgIAAAEAAAAAAAAAAAAwwBUAAAAGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-19T18:25:12.671Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "DashboardController.cs",
+              "DocumentMoniker": "C:\\HocTap\\AntamNghe\\AntamNghe.WebAdmin\\Controllers\\DashboardController.cs",
+              "RelativeDocumentMoniker": "AntamNghe.WebAdmin\\Controllers\\DashboardController.cs",
+              "ToolTip": "C:\\HocTap\\AntamNghe\\AntamNghe.WebAdmin\\Controllers\\DashboardController.cs",
+              "RelativeToolTip": "AntamNghe.WebAdmin\\Controllers\\DashboardController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-19T18:23:11.059Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "DashboardViewModel.cs",
+              "DocumentMoniker": "C:\\HocTap\\AntamNghe\\AntamNghe.WebAdmin\\Models\\DashboardViewModel.cs",
+              "RelativeDocumentMoniker": "AntamNghe.WebAdmin\\Models\\DashboardViewModel.cs",
+              "ToolTip": "C:\\HocTap\\AntamNghe\\AntamNghe.WebAdmin\\Models\\DashboardViewModel.cs",
+              "RelativeToolTip": "AntamNghe.WebAdmin\\Models\\DashboardViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-19T18:22:31.543Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "C:\\HocTap\\AntamNghe\\AntamNghe.WebAdmin\\Views\\CallLog\\Index.cshtml",
+              "RelativeDocumentMoniker": "AntamNghe.WebAdmin\\Views\\CallLog\\Index.cshtml",
+              "ToolTip": "C:\\HocTap\\AntamNghe\\AntamNghe.WebAdmin\\Views\\CallLog\\Index.cshtml",
+              "RelativeToolTip": "AntamNghe.WebAdmin\\Views\\CallLog\\Index.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-18T05:45:52.24Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "CallLogController.cs",
+              "DocumentMoniker": "C:\\HocTap\\AntamNghe\\AntamNghe.WebAdmin\\Controllers\\CallLogController.cs",
+              "RelativeDocumentMoniker": "AntamNghe.WebAdmin\\Controllers\\CallLogController.cs",
+              "ToolTip": "C:\\HocTap\\AntamNghe\\AntamNghe.WebAdmin\\Controllers\\CallLogController.cs",
+              "RelativeToolTip": "AntamNghe.WebAdmin\\Controllers\\CallLogController.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAABwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-18T05:42:31.917Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "CallLog.cs",
+              "DocumentMoniker": "C:\\HocTap\\AntamNghe\\AntamNghe.WebAdmin\\Models\\CallLog.cs",
+              "RelativeDocumentMoniker": "AntamNghe.WebAdmin\\Models\\CallLog.cs",
+              "ToolTip": "C:\\HocTap\\AntamNghe\\AntamNghe.WebAdmin\\Models\\CallLog.cs",
+              "RelativeToolTip": "AntamNghe.WebAdmin\\Models\\CallLog.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-18T05:40:24.791Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
