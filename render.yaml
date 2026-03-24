@@ -1,0 +1,27 @@
+databases:
+  - name: antamnghe-db
+    databaseName: antamnghe
+    user: antamnghe
+
+services:
+  - type: web
+    name: antamnghe-api
+    runtime: dotnet
+    rootDir: Backend/AntamNghe
+    buildCommand: dotnet publish -c Release -o ./publish
+    startCommand: dotnet ./publish/AntamNghe.dll
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: Database__RunMigrationsOnStartup
+        value: true
+      - key: Jwt__Issuer
+        value: AntamNghe
+      - key: Jwt__Key
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: antamnghe-db
+          property: connectionString
