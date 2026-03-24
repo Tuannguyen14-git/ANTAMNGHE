@@ -14,6 +14,7 @@ import 'screens/vip_list_screen.dart';
 import 'screens/blocked_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/emergency_screen.dart';
+import 'screens/onboarding_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,7 +44,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'AntamNghe',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
       initialRoute: initialRoute,
       routes: {
         '/': (_) => const HomeScreen(),
@@ -56,6 +57,7 @@ class MyApp extends StatelessWidget {
         '/vip-list': (_) => const VipListScreen(),
         '/blocked': (_) => const BlockedScreen(),
         '/history': (_) => const HistoryScreen(),
+        '/onboarding': (_) => const OnboardingScreen(),
         '/emergency': (_) => const EmergencyScreen(),
       },
     );

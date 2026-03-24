@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/avatar_badge.dart';
 import '../services/auth_service.dart';
+import '../theme/app_theme.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -102,26 +103,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Stack(
                     children: [
                       _avatarImage != null
-                          ? CircleAvatar(
-                              radius: 48,
-                              backgroundImage: FileImage(_avatarImage!),
+                          ? Container(
+                              width: 96,
+                              height: 96,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                image: DecorationImage(
+                                  image: FileImage(_avatarImage!),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             )
-                          : AvatarBadge(initials: 'MN', size: 96),
+                          : Container(
+                              width: 96,
+                              height: 96,
+                              decoration: BoxDecoration(
+                                color: AppTheme.avatarBg,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 36,
+                                ),
+                              ),
+                            ),
                       Positioned(
                         bottom: 0,
                         right: 0,
                         child: GestureDetector(
                           onTap: _pickAvatarImage,
                           child: Container(
+                            width: 30,
+                            height: 30,
                             decoration: BoxDecoration(
-                              color: Colors.black54,
+                              color: AppTheme.primary,
                               shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0x0D000000),
+                                  offset: Offset(0, 2),
+                                  blurRadius: 6,
+                                ),
+                              ],
                             ),
-                            padding: const EdgeInsets.all(6),
                             child: const Icon(
                               Icons.camera_alt,
                               color: Colors.white,
-                              size: 22,
+                              size: 14,
                             ),
                           ),
                         ),
@@ -134,17 +164,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _name.text,
-                          style: Theme.of(context).textTheme.titleLarge,
+                          _name.text.isNotEmpty ? _name.text : 'Tuân',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
+                                color: AppTheme.textTitle,
+                                fontWeight: FontWeight.w800,
+                              ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           _phone.text,
-                          style: const TextStyle(color: Colors.white54),
+                          style: TextStyle(
+                            color: AppTheme.textBody,
+                            fontSize: 13,
+                          ),
                         ),
                         const SizedBox(height: 8),
-                        ElevatedButton(
+                        OutlinedButton(
                           onPressed: () {},
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            side: BorderSide(color: AppTheme.primary, width: 1),
+                            foregroundColor: AppTheme.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                          ),
                           child: const Text('Chỉnh sửa'),
                         ),
                       ],
@@ -222,8 +271,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     hintStyle: TextStyle(color: Colors.white38),
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 16),
               ],
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -245,19 +295,13 @@ class _Section extends StatelessWidget {
         Text(
           title,
           style: const TextStyle(
-            color: Colors.white70,
+            color: Color(0xFF495057),
             fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF121214),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(children: children),
-        ),
+        Column(children: children),
         const SizedBox(height: 12),
       ],
     );
@@ -272,16 +316,50 @@ class _Tile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: Theme.of(
-          context,
-        ).colorScheme.primary.withOpacity(0.12),
-        child: Icon(icon, color: Theme.of(context).colorScheme.primary),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.card,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D000000),
+            offset: Offset(0, 4),
+            blurRadius: 12,
+          ),
+        ],
       ),
-      title: Text(text, style: const TextStyle(color: Colors.white)),
-      trailing: const Icon(Icons.chevron_right, color: Colors.white54),
-      onTap: onTap,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppTheme.iconBg,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: AppTheme.primary),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    text,
+                    style: TextStyle(color: AppTheme.textTitle),
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: AppTheme.arrowColor),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

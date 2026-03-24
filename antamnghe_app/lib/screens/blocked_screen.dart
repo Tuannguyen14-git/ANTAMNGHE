@@ -1,6 +1,13 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+import 'report_spam_screen.dart';
+
+// Replace these URLs with your actual backend endpoints if different.
+const String apiUrl = 'https://localhost:7295/api/Blocked';
+const String apiUrlSpam = 'https://localhost:7295/api/SpamReports';
 
 class BlockedNumber {
   final int id;
@@ -9,27 +16,23 @@ class BlockedNumber {
 
   BlockedNumber({required this.id, required this.phoneNumber, this.note});
 
-  factory BlockedNumber.fromJson(Map<String, dynamic> json) {
-    return BlockedNumber(
-      id: json['id'],
-      phoneNumber: json['phoneNumber'],
-      note: json['note'],
-    );
-  }
+  factory BlockedNumber.fromJson(Map<String, dynamic> json) => BlockedNumber(
+    id: json['id'] as int,
+    phoneNumber: json['phoneNumber'] as String,
+    note: json['note'] as String?,
+  );
 }
 
 class BlockedScreen extends StatefulWidget {
-  const BlockedScreen({super.key});
+  const BlockedScreen({Key? key}) : super(key: key);
 
   @override
   State<BlockedScreen> createState() => _BlockedScreenState();
 }
 
 class _BlockedScreenState extends State<BlockedScreen> {
-  List<BlockedNumber> blockedList = [];
   bool isLoading = false;
-  final String apiUrl =
-      'https://localhost:7295/api/Blocked'; // Đổi lại nếu backend chạy port khác
+  List<BlockedNumber> blockedList = [];
 
   @override
   void initState() {
@@ -42,13 +45,13 @@ class _BlockedScreenState extends State<BlockedScreen> {
     try {
       final res = await http.get(Uri.parse(apiUrl));
       if (res.statusCode == 200) {
-        final List data = json.decode(res.body);
-        setState(() {
-          blockedList = data.map((e) => BlockedNumber.fromJson(e)).toList();
-        });
+        final data = json.decode(res.body) as List<dynamic>;
+        blockedList = data
+            .map((e) => BlockedNumber.fromJson(e as Map<String, dynamic>))
+            .toList();
       }
     } catch (_) {}
-    setState(() => isLoading = false);
+    if (mounted) setState(() => isLoading = false);
   }
 
   Future<void> _addBlocked(String phone, [String? note]) async {
@@ -57,17 +60,13 @@ class _BlockedScreenState extends State<BlockedScreen> {
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'phoneNumber': phone, 'note': note}),
     );
-    if (res.statusCode == 201) {
-      _fetchBlockedList();
-    }
+    if (res.statusCode == 201 || res.statusCode == 200) _fetchBlockedList();
   }
 
   Future<void> _removeBlocked(int id) async {
     final res = await http.delete(Uri.parse('$apiUrl/$id'));
-    if (res.statusCode == 204) {
-      setState(() {
-        blockedList.removeWhere((v) => v.id == id);
-      });
+    if (res.statusCode == 204 || res.statusCode == 200) {
+      setState(() => blockedList.removeWhere((v) => v.id == id));
     }
   }
 
@@ -77,14 +76,38 @@ class _BlockedScreenState extends State<BlockedScreen> {
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'id': id, 'phoneNumber': phone, 'note': note}),
     );
-    if (res.statusCode == 200) {
-      _fetchBlockedList();
+    if (res.statusCode == 200) _fetchBlockedList();
+  }
+
+  Future<void> _reportSpam(String phone) async {
+    try {
+      final res = await http.post(
+        Uri.parse(apiUrlSpam),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'phoneNumber': phone,
+          'reason': 'reported from app',
+        }),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            res.statusCode == 201 || res.statusCode == 200
+                ? 'Đã báo cáo số spam'
+                : 'Báo cáo thất bại',
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Lỗi kết nối')));
     }
   }
 
   void _showEditDialog(BlockedNumber blocked) {
-    String phone = blocked.phoneNumber;
-    String note = blocked.note ?? '';
+    final phoneCtl = TextEditingController(text: blocked.phoneNumber);
+    final noteCtl = TextEditingController(text: blocked.note ?? '');
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -94,25 +117,24 @@ class _BlockedScreenState extends State<BlockedScreen> {
           children: [
             TextField(
               keyboardType: TextInputType.phone,
+              controller: phoneCtl,
               decoration: const InputDecoration(hintText: 'Nhập số điện thoại'),
-              controller: TextEditingController(text: phone),
-              onChanged: (val) => phone = val,
             ),
             const SizedBox(height: 8),
             TextField(
+              controller: noteCtl,
               decoration: const InputDecoration(
                 hintText: 'Ghi chú (không bắt buộc)',
               ),
-              controller: TextEditingController(text: note),
-              onChanged: (val) => note = val,
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () {
-              if (phone.trim().isNotEmpty)
-                _updateBlocked(blocked.id, phone.trim(), note.trim());
+              final phone = phoneCtl.text.trim();
+              final note = noteCtl.text.trim();
+              if (phone.isNotEmpty) _updateBlocked(blocked.id, phone, note);
               Navigator.pop(ctx);
             },
             child: const Text('Lưu'),
@@ -123,8 +145,8 @@ class _BlockedScreenState extends State<BlockedScreen> {
   }
 
   void _showAddDialog() {
-    String phone = '';
-    String note = '';
+    final phoneCtl = TextEditingController();
+    final noteCtl = TextEditingController();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -134,23 +156,24 @@ class _BlockedScreenState extends State<BlockedScreen> {
           children: [
             TextField(
               keyboardType: TextInputType.phone,
+              controller: phoneCtl,
               decoration: const InputDecoration(hintText: 'Nhập số điện thoại'),
-              onChanged: (val) => phone = val,
             ),
             const SizedBox(height: 8),
             TextField(
+              controller: noteCtl,
               decoration: const InputDecoration(
                 hintText: 'Ghi chú (không bắt buộc)',
               ),
-              onChanged: (val) => note = val,
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () {
-              if (phone.trim().isNotEmpty)
-                _addBlocked(phone.trim(), note.trim());
+              final phone = phoneCtl.text.trim();
+              final note = noteCtl.text.trim();
+              if (phone.isNotEmpty) _addBlocked(phone, note);
               Navigator.pop(ctx);
             },
             child: const Text('Thêm'),
@@ -163,35 +186,105 @@ class _BlockedScreenState extends State<BlockedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Blocked List')),
+      appBar: AppBar(
+        title: const Text('Danh sách chặn'),
+        actions: [
+          IconButton(
+            tooltip: 'Báo cáo spam',
+            icon: const Icon(Icons.report),
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const ReportSpamScreen())),
+          ),
+        ],
+      ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : blockedList.isEmpty
           ? const Center(child: Text('Chưa có số chặn nào.'))
           : ListView.builder(
+              padding: const EdgeInsets.all(12),
               itemCount: blockedList.length,
-              itemBuilder: (ctx, i) => ListTile(
-                leading: const Icon(Icons.block, color: Colors.redAccent),
-                title: Text(blockedList[i].phoneNumber),
-                subtitle:
-                    blockedList[i].note != null &&
-                        blockedList[i].note!.isNotEmpty
-                    ? Text(blockedList[i].note!)
-                    : null,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.orange),
-                      onPressed: () => _showEditDialog(blockedList[i]),
+              itemBuilder: (ctx, i) {
+                final b = blockedList[i];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _removeBlocked(blockedList[i].id),
+                    elevation: 2,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: Colors.red.shade50,
+                            child: const Icon(
+                              Icons.block,
+                              color: Colors.redAccent,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  b.phoneNumber,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                if (b.note != null && b.note!.isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    b.note!,
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.report_problem,
+                                  color: Colors.purple,
+                                ),
+                                onPressed: () => _reportSpam(b.phoneNumber),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.orange,
+                                ),
+                                onPressed: () => _showEditDialog(b),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () => _removeBlocked(b.id),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddDialog,

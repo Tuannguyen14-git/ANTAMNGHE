@@ -30,6 +30,16 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Prototype CallScreeningService — registered here so Android can bind to it.
+             Requires android.permission.BIND_SCREENING_SERVICE and user enabling the screening app in settings. -->
+        <service
+            android:name=".CallScreeningServiceImpl"
+            android:permission="android.permission.BIND_SCREENING_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.telecom.CallScreeningService" />
+            </intent-filter>
+        </service>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

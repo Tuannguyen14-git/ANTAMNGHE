@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:antamnghe_app/theme/app_theme.dart';
 
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({Key? key}) : super(key: key);
@@ -8,10 +9,10 @@ class NotificationScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Thông báo'),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: AppTheme.darkSurface,
+        foregroundColor: AppTheme.darkOnSurfaceText,
       ),
-      backgroundColor: const Color(0xFF181820),
+      backgroundColor: AppTheme.darkSurface,
       body: const Center(
         child: Text(
           'Chưa có thông báo nào.',

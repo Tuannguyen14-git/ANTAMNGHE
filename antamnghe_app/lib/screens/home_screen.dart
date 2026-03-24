@@ -118,7 +118,7 @@ class _HomeContentState extends State<HomeContent> {
     final primary = Theme.of(context).colorScheme.primary;
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -171,11 +171,7 @@ class _HomeContentState extends State<HomeContent> {
             // Banner
             Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppTheme.primary, AppTheme.accent],
-                ),
+                gradient: AppTheme.headerGradient,
                 borderRadius: BorderRadius.circular(16),
               ),
               padding: const EdgeInsets.all(16),
@@ -242,33 +238,40 @@ class _HomeContentState extends State<HomeContent> {
                 ],
               ),
             ),
-            // Search Bar (thanh tìm kiếm)
-            const SizedBox(height: 18),
+            // Search Bar (thanh tìm kiếm) — white card with larger radius and subtle shadow
+            const SizedBox(height: 16),
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF232328),
-                borderRadius: BorderRadius.circular(32),
+                color: AppTheme.searchBackground,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x0D000000), // rgba(0,0,0,0.05)
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
+                  ),
+                ],
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
-                  const Icon(Icons.search, color: Colors.white38, size: 24),
-                  const SizedBox(width: 10),
+                  Icon(Icons.search, color: AppTheme.mutedIcon, size: 26),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: TextField(
                       controller: _ctrl,
                       focusNode: _searchFocus,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                      decoration: const InputDecoration(
+                      style: TextStyle(color: AppTheme.textTitle, fontSize: 16),
+                      decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: 'Tìm kiếm một số điện thoại',
                         hintStyle: TextStyle(
-                          color: Colors.white38,
+                          color: AppTheme.textBody,
                           fontSize: 16,
                         ),
                         isCollapsed: true,
                       ),
-                      cursorColor: Colors.white38,
+                      cursorColor: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 ],
@@ -290,7 +293,7 @@ class _HomeContentState extends State<HomeContent> {
             // ),
 
             // Search Placeholder (Kính lúp)
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
             Center(
               child: Column(
                 children: [
@@ -298,28 +301,35 @@ class _HomeContentState extends State<HomeContent> {
                     width: 90,
                     height: 90,
                     decoration: BoxDecoration(
-                      color: Colors.grey[900],
+                      color: AppTheme.primary,
                       shape: BoxShape.circle,
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x0D000000),
+                          offset: Offset(0, 4),
+                          blurRadius: 12,
+                        ),
+                      ],
                     ),
                     child: const Icon(
                       Icons.search,
                       size: 48,
-                      color: Colors.white38,
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 18),
-                  const Text(
+                  Text(
                     'Chưa có tìm kiếm nào',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.textTitle,
                       fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
+                  Text(
                     'Tìm kiếm của bạn sẽ xuất hiện ở đây',
-                    style: TextStyle(color: Colors.white54, fontSize: 14),
+                    style: TextStyle(color: AppTheme.textBody, fontSize: 14),
                   ),
                 ],
               ),
@@ -333,7 +343,7 @@ class _HomeContentState extends State<HomeContent> {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
@@ -345,9 +355,9 @@ class _HomeContentState extends State<HomeContent> {
                 _ExploreCard(
                   icon: Icons.person,
                   label: 'VIP List',
-                  bgColor: const Color(0xFF232328),
-                  iconColor: Colors.blueAccent,
-                  circleColor: Colors.blueGrey,
+                  bgColor: AppTheme.card,
+                  iconColor: Colors.white,
+                  circleColor: AppTheme.primary,
                   onTap: () {
                     Navigator.of(context).pushNamed('/vip-list');
                   },
@@ -355,9 +365,9 @@ class _HomeContentState extends State<HomeContent> {
                 _ExploreCard(
                   icon: Icons.block,
                   label: 'Blocked',
-                  bgColor: const Color(0xFF232328),
-                  iconColor: Colors.redAccent,
-                  circleColor: Colors.red,
+                  bgColor: AppTheme.card,
+                  iconColor: Colors.white,
+                  circleColor: AppTheme.primary,
                   onTap: () {
                     Navigator.of(context).pushNamed('/blocked');
                   },
@@ -365,9 +375,9 @@ class _HomeContentState extends State<HomeContent> {
                 _ExploreCard(
                   icon: Icons.history,
                   label: 'History',
-                  bgColor: const Color(0xFF232328),
-                  iconColor: Colors.lightBlueAccent,
-                  circleColor: Colors.blueGrey,
+                  bgColor: AppTheme.card,
+                  iconColor: Colors.white,
+                  circleColor: AppTheme.primary,
                   onTap: () {
                     Navigator.of(context).pushNamed('/history');
                   },
@@ -375,9 +385,9 @@ class _HomeContentState extends State<HomeContent> {
                 _ExploreCard(
                   icon: Icons.error_outline,
                   label: 'Emergency',
-                  bgColor: const Color(0xFF232328),
-                  iconColor: Colors.orangeAccent,
-                  circleColor: Colors.orange,
+                  bgColor: AppTheme.card,
+                  iconColor: Colors.white,
+                  circleColor: AppTheme.primary,
                   onTap: () {
                     Navigator.of(context).pushNamed('/emergency');
                   },
@@ -417,13 +427,13 @@ class _ExploreCard extends StatelessWidget {
         width: width,
         child: Container(
           decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [
+            gradient: AppTheme.cardGradient,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: const [
               BoxShadow(
-                color: bgColor.withOpacity(0.25),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
+                color: Color(0x0D000000),
+                blurRadius: 12,
+                offset: Offset(0, 4),
               ),
             ],
           ),
@@ -432,19 +442,26 @@ class _ExploreCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 52,
-                height: 52,
+                width: 60,
+                height: 60,
                 decoration: BoxDecoration(
                   color: circleColor,
                   shape: BoxShape.circle,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x0D000000),
+                      offset: Offset(0, 4),
+                      blurRadius: 12,
+                    ),
+                  ],
                 ),
-                child: Icon(icon, color: iconColor, size: 28),
+                child: Icon(icon, color: Colors.white, size: 32),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppTheme.textTitle,
                   fontWeight: FontWeight.w600,
                 ),
                 textAlign: TextAlign.center,

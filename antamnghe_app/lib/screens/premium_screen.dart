@@ -1,80 +1,134 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class PremiumScreen extends StatelessWidget {
   const PremiumScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final bg = Theme.of(context).scaffoldBackgroundColor;
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(title: const Text('Gói Premium'), elevation: 0),
       body: Column(
         children: [
-          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient: AppTheme.headerGradient,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x14000000),
+                    blurRadius: 18,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Nâng cấp Premium',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          'Mở khóa nhận diện cuộc gọi, chặn spam nâng cao và trải nghiệm không quảng cáo.',
+                          style: TextStyle(
+                            color: Color(0xFFFCECEE),
+                            height: 1.45,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 68,
+                    height: 68,
+                    decoration: BoxDecoration(
+                      color: const Color(0x26FFFFFF),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(Icons.workspace_premium, color: Colors.white, size: 36),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
           Expanded(
             child: PageView(
-              controller: PageController(viewportFraction: 0.82),
-              children: [
+              controller: PageController(viewportFraction: 0.86),
+              children: const [
                 PremiumCard(
                   title: 'Premium',
-                  accent: Colors.blue.shade700,
-                  gradient: const [Color(0xFF1E88FF), Color(0xFF2563EB)],
+                  badge: 'Phổ biến',
+                  accent: AppTheme.primary,
                   monthly: '28.000đ/tháng',
                   yearly: '195.000đ/năm',
-                  features: const [
-                    'ID Người gọi',
+                  description: 'Dành cho cá nhân muốn lọc spam và nhận diện cuộc gọi ổn định mỗi ngày.',
+                  features: [
+                    'ID Người gọi theo thời gian thực',
                     'Tự động chặn spam',
-                    'Ko quảng cáo',
-                    'Cảnh Báo Cuộc Gọi',
-                    'Biểu tượng tắt Siri',
+                    'Không quảng cáo',
+                    'Cảnh báo cuộc gọi nghi ngờ',
+                    'Đồng bộ danh sách ưu tiên',
                   ],
                 ),
                 PremiumCard(
                   title: 'Family',
-                  accent: const Color(0xFF8B5CF6),
-                  gradient: const [Color(0xFFE9D5FF), Color(0xFFD6BCFA)],
+                  badge: 'Gia đình',
+                  accent: Color(0xFFFF8A5B),
                   monthly: '65.000đ/tháng',
                   yearly: '455.000đ/năm',
-                  features: const [
-                    'ID Người gọi',
-                    'Tự động chặn spam',
-                    'Ko quảng cáo',
-                    'Cảnh Báo Cuộc Gọi',
-                    'Chia sẻ trong Gia đình',
+                  description: 'Chia sẻ quyền lợi cho cả nhà và bảo vệ nhiều thiết bị trong cùng tài khoản.',
+                  features: [
+                    'Toàn bộ tính năng Premium',
+                    'Chia sẻ trong gia đình',
+                    'Quản lý nhiều thiết bị',
+                    'Ưu tiên hỗ trợ kỹ thuật',
+                    'Bộ lọc nâng cao cho trẻ em và người lớn tuổi',
                   ],
                 ),
                 PremiumCard(
                   title: 'Gold',
-                  accent: const Color(0xFFF59E0B),
-                  gradient: const [Color(0xFFFFE082), Color(0xFFF59E0B)],
+                  badge: 'Cao cấp',
+                  accent: AppTheme.accent,
                   monthly: 'Gói cao cấp',
                   yearly: 'Liên hệ',
-                  features: const [
-                    'ID Người gọi',
-                    'Tự động chặn spam',
+                  description: 'Gói dành cho người dùng cần hỗ trợ VIP và tính năng ưu tiên chuyên sâu.',
+                  features: [
+                    'Tất cả tính năng Family',
                     'Ưu đãi VIP',
                     'Hỗ trợ cao cấp',
+                    'Tư vấn thiết lập riêng',
+                    'Ưu tiên tính năng mới',
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             child: Text(
-              'Tìm hiểu các tính năng và so sánh các gói',
-              style: TextStyle(
-                color: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.color?.withOpacity(0.7),
-              ),
+              'So sánh gói để chọn mức bảo vệ phù hợp cho bạn.',
+              style: TextStyle(color: AppTheme.textBody),
             ),
           ),
-          const SizedBox(height: 10),
         ],
       ),
-      backgroundColor: bg,
     );
   }
 }
@@ -82,80 +136,167 @@ class PremiumScreen extends StatelessWidget {
 class PremiumCard extends StatelessWidget {
   final String title;
   final List<String> features;
-  final List<Color> gradient;
   final Color accent;
   final String monthly;
   final String yearly;
+  final String badge;
+  final String description;
 
   const PremiumCard({
     super.key,
     required this.title,
     required this.features,
-    required this.gradient,
     required this.accent,
     required this.monthly,
     required this.yearly,
+    required this.badge,
+    required this.description,
   });
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(20.0);
-    final textOnAccent = Colors.black;
+    final radius = BorderRadius.circular(24.0);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Material(
-        elevation: 8,
+        color: Colors.transparent,
         borderRadius: radius,
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: gradient,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: AppTheme.card,
             borderRadius: radius,
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x12000000),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
           ),
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.iconBg,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      badge,
+                      style: TextStyle(
+                        color: accent,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(Icons.workspace_premium, color: accent, size: 28),
+                ],
+              ),
+              const SizedBox(height: 16),
               Text(
-                'Truecaller',
-                style: TextStyle(
-                  color: textOnAccent.withOpacity(0.9),
-                  fontWeight: FontWeight.w600,
+                title,
+                style: const TextStyle(
+                  fontSize: 34,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.textTitle,
                 ),
               ),
               const SizedBox(height: 6),
               Text(
-                title,
-                style: TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.w800,
-                  color: textOnAccent,
+                description,
+                style: const TextStyle(
+                  color: AppTheme.textBody,
+                  height: 1.45,
                 ),
               ),
-              const SizedBox(height: 10),
-              // features
+              const SizedBox(height: 18),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [accent.withValues(alpha: 0.14), Colors.white],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Gói tháng',
+                            style: TextStyle(
+                              color: AppTheme.textBody,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            monthly,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.textTitle,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: accent,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'Ưu đãi',
+                        style: TextStyle(
+                          color: accent.computeLuminance() > 0.5 ? AppTheme.textTitle : Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
               Expanded(
                 child: ListView.builder(
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: features.length,
                   itemBuilder: (context, idx) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    padding: const EdgeInsets.symmetric(vertical: 6),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.check,
-                          size: 18,
-                          color: textOnAccent.withOpacity(0.95),
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: AppTheme.iconBg,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Icon(
+                            Icons.check,
+                            size: 16,
+                            color: accent,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             features[idx],
-                            style: TextStyle(
-                              color: textOnAccent.withOpacity(0.95),
+                            style: const TextStyle(
+                              color: AppTheme.textTitle,
+                              height: 1.35,
                             ),
                           ),
                         ),
@@ -164,79 +305,21 @@ class PremiumCard extends StatelessWidget {
                   ),
                 ),
               ),
-
-              const SizedBox(height: 8),
-              // price area
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 14,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Gói tháng',
-                            style: TextStyle(
-                              color: Colors.black.withOpacity(0.7),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            monthly,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: accent,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        'Giảm giá',
-                        style: TextStyle(
-                          color: textOnAccent,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
               const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: gradient.first,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   child: Text(
-                    yearly,
+                    'Chọn gói $yearly',
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),

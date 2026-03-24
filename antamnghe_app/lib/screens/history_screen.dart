@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'report_spam_screen.dart';
 
 class CallHistory {
   final int id;
@@ -186,33 +187,97 @@ class _HistoryScreenState extends State<HistoryScreen> {
           : historyList.isEmpty
           ? const Center(child: Text('Chưa có lịch sử nào.'))
           : ListView.builder(
+              padding: const EdgeInsets.all(12),
               itemCount: historyList.length,
-              itemBuilder: (ctx, i) => ListTile(
-                leading: const Icon(Icons.history, color: Colors.blueGrey),
-                title: Text(historyList[i].phoneNumber),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Thời gian: ' + historyList[i].callTime.toString()),
-                    if (historyList[i].note != null &&
-                        historyList[i].note!.isNotEmpty)
-                      Text(historyList[i].note!),
-                  ],
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.orange),
-                      onPressed: () => _showEditDialog(historyList[i]),
+              itemBuilder: (ctx, i) {
+                final h = historyList[i];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _removeHistory(historyList[i].id),
+                    elevation: 2,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 22,
+                            backgroundColor: Colors.blueGrey.shade50,
+                            child: const Icon(
+                              Icons.history,
+                              color: Colors.blueGrey,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  h.phoneNumber,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Thời gian: ${h.callTime}',
+                                  style: TextStyle(color: Colors.grey.shade600),
+                                ),
+                                if (h.note != null && h.note!.isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    h.note!,
+                                    style: TextStyle(
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.report_problem,
+                                  color: Colors.purple,
+                                ),
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => ReportSpamScreen(
+                                        initialPhone: h.phoneNumber,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.orange,
+                                ),
+                                onPressed: () => _showEditDialog(h),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () => _removeHistory(h.id),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddDialog,

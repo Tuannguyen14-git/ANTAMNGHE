@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:antamnghe_app/theme/app_theme.dart';
 
 class ProfileViewersScreen extends StatelessWidget {
   const ProfileViewersScreen({Key? key}) : super(key: key);
@@ -15,10 +16,10 @@ class ProfileViewersScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ai đã xem hồ sơ của tôi'),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: AppTheme.darkSurface,
+        foregroundColor: AppTheme.darkOnSurfaceText,
       ),
-      backgroundColor: const Color(0xFF181820),
+      backgroundColor: AppTheme.darkSurface,
       body: viewers.isEmpty
           ? const Center(
               child: Text(

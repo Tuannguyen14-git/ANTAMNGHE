@@ -162,37 +162,135 @@ class _VipListScreenState extends State<VipListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('VIP List')),
+      appBar: AppBar(title: const Text('Danh bạ ưu tiên')),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : vipList.isEmpty
           ? const Center(child: Text('Chưa có số ưu tiên nào.'))
           : ListView.builder(
+              padding: const EdgeInsets.all(12),
               itemCount: vipList.length,
-              itemBuilder: (ctx, i) => ListTile(
-                leading: const Icon(Icons.person, color: Colors.blueAccent),
-                title: Text(vipList[i].phoneNumber),
-                subtitle: vipList[i].name != null && vipList[i].name!.isNotEmpty
-                    ? Text(vipList[i].name!)
-                    : null,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.orange),
-                      onPressed: () => _showEditDialog(vipList[i]),
+              itemBuilder: (ctx, i) {
+                final vip = vipList[i];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _removeVip(vipList[i].id),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
                     ),
-                  ],
-                ),
-              ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 26,
+                          backgroundColor: const Color(
+                            0xFF4A4E69,
+                          ), // gray-blue avatar
+                          child: const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                vip.name ?? vip.phoneNumber,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1A1A1A), // main text
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                vip.phoneNumber,
+                                style: const TextStyle(
+                                  color: Color(0xFFADB5BD), // secondary text
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.call),
+                              color: const Color(0xFF6C757D), // neutral gray
+                              onPressed: () {},
+                              splashRadius: 24,
+                            ),
+                            const SizedBox(width: 6),
+                            IconButton(
+                              icon: const Icon(Icons.edit),
+                              color: const Color(0xFF6C757D),
+                              onPressed: () => _showEditDialog(vip),
+                              splashRadius: 24,
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              color: const Color(0xFF6C757D),
+                              onPressed: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('Xác nhận'),
+                                    content: const Text(
+                                      'Bạn có chắc muốn xóa mục này?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, false),
+                                        child: const Text('Hủy'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, true),
+                                        child: const Text(
+                                          'Xóa',
+                                          style: TextStyle(
+                                            color: Color(0xFFE63946),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirm == true) {
+                                  _removeVip(vip.id);
+                                }
+                              },
+                              splashRadius: 24,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddDialog,
-        child: const Icon(Icons.add),
+        backgroundColor: const Color(0xFFE63946),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
