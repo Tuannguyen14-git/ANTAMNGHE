@@ -14,7 +14,7 @@ if (!string.IsNullOrWhiteSpace(port))
 }
 
 var connectionString = ResolveConnectionString(builder.Configuration);
-var allowedOrigins = ResolveAllowedOrigins(builder.Configuration, builder.Environment);
+var corsSettings = ResolveCorsSettings(builder.Configuration, builder.Environment);
 
 // Add services to the container.
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -31,13 +31,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
     {
-        if (allowedOrigins.Count == 0)
+        if (corsSettings.AllowAnyOrigin)
         {
             policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();
             return;
         }
 
-        policy.WithOrigins(allowedOrigins.ToArray())
+        policy.WithOrigins(corsSettings.AllowedOrigins.ToArray())
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -78,9 +78,9 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
-if (!app.Environment.IsDevelopment() && allowedOrigins.Count == 0)
+if (!app.Environment.IsDevelopment() && corsSettings.AllowAnyOrigin)
 {
-    app.Logger.LogWarning("No CORS origins configured for production. Set CORS_ALLOWED_ORIGINS or Cors:AllowedOrigins.");
+    app.Logger.LogWarning("CORS is allowing any origin in production. Set CORS_ALLOWED_ORIGINS to explicit domains when ready.");
 }
 
 if (builder.Configuration.GetValue("Database:RunMigrationsOnStartup", false))
@@ -95,16 +95,19 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseHttpsRedirection();
 }
-
-
-app.UseHttpsRedirection();
 
 app.UseCors("Frontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGet("/", () => Results.Ok(new
+{
+    message = "AntamNghe API is running",
+    health = "/healthz"
+}));
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
 app.MapControllers();
 
@@ -155,7 +158,7 @@ static string BuildConnectionStringFromDatabaseUrl(string databaseUrl)
     return builder.ConnectionString;
 }
 
-static List<string> ResolveAllowedOrigins(IConfiguration configuration, IWebHostEnvironment environment)
+static CorsSettings ResolveCorsSettings(IConfiguration configuration, IWebHostEnvironment environment)
 {
     var configuredOrigins = configuration
         .GetSection("Cors:AllowedOrigins")
@@ -165,25 +168,37 @@ static List<string> ResolveAllowedOrigins(IConfiguration configuration, IWebHost
         .ToList()
         ?? new List<string>();
 
+    var allowAnyOrigin = false;
+
+    if (configuredOrigins.Any(origin => origin == "*"))
+    {
+        allowAnyOrigin = true;
+        configuredOrigins.RemoveAll(origin => origin == "*");
+    }
+
     var envOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS");
     if (!string.IsNullOrWhiteSpace(envOrigins))
     {
-        configuredOrigins.AddRange(
-            envOrigins
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        if (envOrigins.Trim() == "*")
+        {
+            allowAnyOrigin = true;
+        }
+        else
+        {
+            configuredOrigins.AddRange(
+                envOrigins
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        }
     }
 
     if (configuredOrigins.Count == 0 && environment.IsDevelopment())
     {
-        configuredOrigins.AddRange(new[]
-        {
-            "http://localhost:3000",
-            "http://localhost:5000",
-            "http://localhost:5195",
-            "http://localhost:7295",
-            "http://localhost:8080"
-        });
+        allowAnyOrigin = true;
     }
 
-    return configuredOrigins.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    return new CorsSettings(
+        allowAnyOrigin,
+        configuredOrigins.Distinct(StringComparer.OrdinalIgnoreCase).ToList());
 }
+
+record CorsSettings(bool AllowAnyOrigin, List<string> AllowedOrigins);
