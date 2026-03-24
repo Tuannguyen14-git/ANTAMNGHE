@@ -8,6 +8,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace AntamNghe.Controllers
 {
@@ -17,11 +19,13 @@ namespace AntamNghe.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _config;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(AppDbContext context, IConfiguration config)
+        public AuthController(AppDbContext context, IConfiguration config, ILogger<AuthController> logger)
         {
             _context = context;
             _config = config;
+            _logger = logger;
         }
 
         public class RegisterRequest
@@ -54,7 +58,27 @@ namespace AntamNghe.Controllers
             };
 
             _context.Users.Add(user);
-            _context.SaveChanges();
+
+            try
+            {
+                _context.SaveChanges();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == PostgresErrorCodes.UniqueViolation)
+            {
+                _logger.LogError(ex, "Unique violation while registering phone {Phone}. Constraint: {ConstraintName}", req.Phone, pg.ConstraintName);
+
+                if (string.Equals(pg.ConstraintName, "PK_Users", StringComparison.OrdinalIgnoreCase))
+                {
+                    return StatusCode(500, new { message = "Users ID sequence is out of sync. Reset the Users.Id sequence in PostgreSQL." });
+                }
+
+                return Conflict(new { message = "Phone already registered" });
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Database error while registering phone {Phone}", req.Phone);
+                return StatusCode(500, new { message = "Database error while registering user" });
+            }
 
             return Ok(new { id = user.Id, phone = user.Phone });
         }
