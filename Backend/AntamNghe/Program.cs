@@ -83,7 +83,7 @@ if (!app.Environment.IsDevelopment() && corsSettings.AllowAnyOrigin)
     app.Logger.LogWarning("CORS is allowing any origin in production. Set CORS_ALLOWED_ORIGINS to explicit domains when ready.");
 }
 
-if (builder.Configuration.GetValue("Database:RunMigrationsOnStartup", false))
+if (ShouldRunMigrationsOnStartup(builder.Configuration, app.Environment))
 {
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -199,6 +199,17 @@ static CorsSettings ResolveCorsSettings(IConfiguration configuration, IWebHostEn
     return new CorsSettings(
         allowAnyOrigin,
         configuredOrigins.Distinct(StringComparer.OrdinalIgnoreCase).ToList());
+}
+
+static bool ShouldRunMigrationsOnStartup(IConfiguration configuration, IWebHostEnvironment environment)
+{
+    var configuredValue = configuration["Database:RunMigrationsOnStartup"];
+    if (bool.TryParse(configuredValue, out var shouldRunMigrations))
+    {
+        return shouldRunMigrations;
+    }
+
+    return !environment.IsDevelopment();
 }
 
 record CorsSettings(bool AllowAnyOrigin, List<string> AllowedOrigins);
