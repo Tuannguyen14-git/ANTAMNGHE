@@ -18,16 +18,13 @@ namespace AntamNghe.Controllers
         public IActionResult GetStats()
         {
             var totalSpam = _context.SpamNumbers.Count();
-
-            var totalCalls = _context.CallLogs.Count();
-
             var totalReports = _context.SpamNumbers.Sum(x => x.ReportCount);
 
             return Ok(new
             {
                 totalSpam,
-                totalCalls,
-                totalReports
+                totalReports,
+                localOnlyMessage = "Call logs, call history, VIP contacts, blocked numbers, and emergency contacts are now processed on-device only."
             });
         }
     }

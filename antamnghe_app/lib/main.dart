@@ -15,6 +15,7 @@ import 'screens/blocked_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/emergency_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/privacy_center_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,8 +27,8 @@ Future<void> main() async {
     ServiceConfig.baseUrl = envBase;
   } else {
     ServiceConfig.baseUrl = kIsWeb
-        ? 'https://localhost:7295'
-        : 'http://10.0.2.2:5000';
+        ? 'http://localhost:5195'
+        : 'http://10.0.2.2:5195';
   }
   final user = await AuthService.instance.currentUser();
   final initial = (user == null) ? '/login' : '/profile';
@@ -59,6 +60,7 @@ class MyApp extends StatelessWidget {
         '/history': (_) => const HistoryScreen(),
         '/onboarding': (_) => const OnboardingScreen(),
         '/emergency': (_) => const EmergencyScreen(),
+        '/privacy-center': (_) => const PrivacyCenterScreen(),
       },
     );
   }

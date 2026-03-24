@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using AntamNghe.Infrastructure.Data;
 using AntamNghe.Domain.Entities;
 using Microsoft.Extensions.Configuration;
@@ -6,6 +7,7 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.EntityFrameworkCore;
 
 namespace AntamNghe.Controllers
 {
@@ -83,6 +85,65 @@ namespace AntamNghe.Controllers
 
             // Trả về đầy đủ thông tin user
             return Ok(new { token, user = new { id = user.Id, phone = user.Phone, name = user.Name, email = user.Email } });
+        }
+
+        [Authorize]
+        [HttpGet("me")]
+        public IActionResult Me()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized();
+
+            var user = _context.Users
+                .AsNoTracking()
+                .FirstOrDefault(x => x.Id == userId.Value);
+
+            if (user == null)
+                return NotFound(new { message = "User not found" });
+
+            return Ok(new { id = user.Id, phone = user.Phone, name = user.Name, email = user.Email });
+        }
+
+        public class UpdateProfileRequest
+        {
+            public string Name { get; set; }
+            public string Email { get; set; }
+            public string Phone { get; set; }
+        }
+
+        [Authorize]
+        [HttpPut("me")]
+        public IActionResult UpdateMe([FromBody] UpdateProfileRequest model)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized();
+
+            if (model == null || string.IsNullOrWhiteSpace(model.Phone))
+                return BadRequest(new { message = "Phone is required" });
+
+            var user = _context.Users.FirstOrDefault(x => x.Id == userId.Value);
+            if (user == null)
+                return NotFound(new { message = "User not found" });
+
+            var phoneExists = _context.Users.Any(x => x.Id != user.Id && x.Phone == model.Phone);
+            if (phoneExists)
+                return Conflict(new { message = "Phone already registered" });
+
+            user.Name = model.Name?.Trim() ?? string.Empty;
+            user.Email = model.Email?.Trim() ?? string.Empty;
+            user.Phone = model.Phone.Trim();
+
+            _context.SaveChanges();
+
+            return Ok(new { id = user.Id, phone = user.Phone, name = user.Name, email = user.Email });
+        }
+
+        private int? GetCurrentUserId()
+        {
+            var rawUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(rawUserId, out var userId) ? userId : null;
         }
 
         private string GenerateJwtToken(User user)

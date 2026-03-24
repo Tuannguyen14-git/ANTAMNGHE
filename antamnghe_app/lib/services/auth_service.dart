@@ -29,13 +29,10 @@ class AuthService {
     final resp = await _api.post('/api/auth/register', body);
 
     if (resp.statusCode == 200 || resp.statusCode == 201) {
-      final map = jsonDecode(resp.body) as Map<String, dynamic>;
-      // register returns minimal info (id, phone). Keep stored user if returned.
-      if (map.isNotEmpty) await _saveUserLocal(map);
-      return map;
+      return jsonDecode(resp.body) as Map<String, dynamic>;
     }
 
-    throw Exception('Register failed: [${resp.statusCode} ${resp.body}');
+    throw Exception('Register failed: ${resp.statusCode} ${resp.body}');
   }
 
   /// Login with phone + password. Returns user map on success.
@@ -79,6 +76,49 @@ class AuthService {
     final s = prefs.getString('user');
     if (s == null) return null;
     return jsonDecode(s) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> fetchProfile() async {
+    final resp = await _api.get('/api/auth/me');
+
+    if (resp.statusCode == 200) {
+      final map = jsonDecode(resp.body) as Map<String, dynamic>;
+      await _saveUserLocal(map);
+      return map;
+    }
+
+    if (resp.statusCode == 401) {
+      await logout();
+      throw Exception('Unauthorized');
+    }
+
+    throw Exception('Fetch profile failed: ${resp.statusCode} ${resp.body}');
+  }
+
+  Future<Map<String, dynamic>> updateProfile({
+    required String name,
+    required String email,
+    required String phone,
+  }) async {
+    final body = {'name': name, 'email': email, 'phone': phone};
+    final resp = await _api.put('/api/auth/me', body);
+
+    if (resp.statusCode == 200) {
+      final map = jsonDecode(resp.body) as Map<String, dynamic>;
+      await _saveUserLocal(map);
+      return map;
+    }
+
+    if (resp.statusCode == 401) {
+      await logout();
+      throw Exception('Unauthorized');
+    }
+
+    if (resp.statusCode == 409) {
+      throw Exception('Conflict');
+    }
+
+    throw Exception('Update profile failed: ${resp.statusCode} ${resp.body}');
   }
 
   Future<void> logout() async {

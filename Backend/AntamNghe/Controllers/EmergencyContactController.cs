@@ -14,50 +14,40 @@ namespace AntamNghe.Controllers
             _context = context;
         }
 
+        private ObjectResult LocalOnly() =>
+            StatusCode(StatusCodes.Status410Gone, new
+            {
+                message = "Emergency contacts are managed on-device only and are no longer stored by the server."
+            });
+
         [HttpGet]
         public IActionResult GetAll()
         {
-            return Ok(_context.EmergencyContacts.OrderByDescending(v => v.CreatedAt).ToList());
+            return LocalOnly();
         }
 
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
-            var item = _context.EmergencyContacts.Find(id);
-            if (item == null) return NotFound();
-            return Ok(item);
+            return LocalOnly();
         }
 
         [HttpPost]
         public IActionResult Create([FromBody] EmergencyContact item)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-            item.CreatedAt = DateTime.UtcNow;
-            _context.EmergencyContacts.Add(item);
-            _context.SaveChanges();
-            return CreatedAtAction(nameof(Get), new { id = item.Id }, item);
+            return LocalOnly();
         }
 
         [HttpPut("{id}")]
         public IActionResult Update(int id, [FromBody] EmergencyContact item)
         {
-            var existing = _context.EmergencyContacts.Find(id);
-            if (existing == null) return NotFound();
-            existing.PhoneNumber = item.PhoneNumber;
-            existing.Name = item.Name;
-            existing.Note = item.Note;
-            _context.SaveChanges();
-            return Ok(existing);
+            return LocalOnly();
         }
 
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            var item = _context.EmergencyContacts.Find(id);
-            if (item == null) return NotFound();
-            _context.EmergencyContacts.Remove(item);
-            _context.SaveChanges();
-            return NoContent();
+            return LocalOnly();
         }
     }
 }

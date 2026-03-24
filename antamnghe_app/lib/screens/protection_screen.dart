@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
 import '../services/call_screening_channel.dart';
+import '../services/focus_mode_service.dart';
+import '../services/screening_sync_service.dart';
 import '../services/spam_service.dart';
 import '../theme/app_theme.dart';
 
@@ -18,6 +20,14 @@ class _ProtectionScreenState extends State<ProtectionScreen> {
   bool _autoBlockEnabled = false;
   List<Map<String, dynamic>> _items = [];
   final _checkController = TextEditingController();
+  FocusModeSnapshot _focusSnapshot = const FocusModeSnapshot(
+    isEnabled: false,
+    until: null,
+  );
+  List<String> _emergencyKeywords = const [];
+  ScreeningSetupStatus? _setupStatus;
+  FocusWidgetStatus? _widgetStatus;
+  bool _setupBusy = false;
 
   bool get _supportsNativeScreening => !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
@@ -47,8 +57,29 @@ class _ProtectionScreenState extends State<ProtectionScreen> {
     setState(() => _loading = true);
     try {
       final list = await SpamService.instance.getAll();
+      final focusSnapshot = await FocusModeService.currentState();
+      final emergencyKeywords = await FocusModeService.getEmergencyKeywords();
+      final setupStatus = _supportsNativeScreening
+          ? await CallScreeningChannel.getSetupStatus()
+          : null;
+      final widgetStatus = _supportsNativeScreening
+          ? await CallScreeningChannel.getFocusWidgetStatus()
+          : null;
+      await ScreeningSyncService.setCommunitySpamNumbers(
+        list
+            .map((item) => (item['phoneNumber'] ?? '').toString())
+            .where((phone) => phone.isNotEmpty)
+            .toList(),
+      );
       if (!mounted) return;
-      setState(() => _items = list);
+      setState(() {
+        _items = list;
+        _focusSnapshot = focusSnapshot;
+        _emergencyKeywords = emergencyKeywords;
+        _setupStatus = setupStatus;
+        _widgetStatus = widgetStatus;
+        _autoBlockEnabled = setupStatus?.isReady ?? false;
+      });
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -93,20 +124,264 @@ class _ProtectionScreenState extends State<ProtectionScreen> {
       return;
     }
 
-    final ok = await CallScreeningChannel.openAppSettings();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(ok ? 'Đã mở cài đặt để bật chặn cuộc gọi.' : 'Không thể mở cài đặt ứng dụng.'),
-      ),
+    if (_setupStatus?.callScreeningSupported == false) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _setupStatus?.supportMessage.isNotEmpty == true
+                ? _setupStatus!.supportMessage
+                : 'Thiết bị này không hỗ trợ Call Screening đầy đủ.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    await _runSetupAction(
+      action: () async {
+        final roleOk = await CallScreeningChannel.requestCallScreeningRole();
+        if (roleOk) return true;
+        final fallbackOk = await CallScreeningChannel.openDefaultAppsSettings();
+        return fallbackOk;
+      },
+      successMessage: 'Đã mở bước bật Call Screening. Sau khi bật xong, kéo xuống để làm mới trạng thái.',
+      failureMessage: 'Không thể mở cấu hình Call Screening trên thiết bị này.',
     );
   }
 
   Future<void> _toggleProtection(bool value) async {
-    setState(() => _autoBlockEnabled = value);
     if (value) {
       await _enableProtection();
+      return;
     }
+    setState(() => _autoBlockEnabled = false);
+  }
+
+  Future<void> _runSetupAction({
+    required Future<bool> Function() action,
+    required String successMessage,
+    required String failureMessage,
+  }) async {
+    setState(() => _setupBusy = true);
+    final ok = await action();
+    final setupStatus = await CallScreeningChannel.getSetupStatus();
+    final widgetStatus = await CallScreeningChannel.getFocusWidgetStatus();
+    if (!mounted) return;
+    setState(() {
+      _setupBusy = false;
+      _setupStatus = setupStatus;
+      _widgetStatus = widgetStatus;
+      _autoBlockEnabled = setupStatus?.isReady ?? false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(ok ? successMessage : failureMessage)),
+    );
+  }
+
+  Future<void> _requestSmsPermissions() async {
+    await _runSetupAction(
+      action: CallScreeningChannel.requestSmsPermissions,
+      successMessage: 'Đã xử lý bước quyền SMS cho tin nhắn khẩn cấp.',
+      failureMessage: 'Quyền SMS chưa được cấp.',
+    );
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    await _runSetupAction(
+      action: () async {
+        final ok = await CallScreeningChannel.requestNotificationPermission();
+        if (ok) return true;
+        return CallScreeningChannel.openAppSettings();
+      },
+      successMessage: 'Đã xử lý bước quyền thông báo khẩn cấp.',
+      failureMessage: 'Không thể bật thông báo khẩn cấp.',
+    );
+  }
+
+  Future<void> _refreshSetupStatus() async {
+    final setupStatus = await CallScreeningChannel.getSetupStatus();
+    final widgetStatus = await CallScreeningChannel.getFocusWidgetStatus();
+    if (!mounted) return;
+    setState(() {
+      _setupStatus = setupStatus;
+      _widgetStatus = widgetStatus;
+      _autoBlockEnabled = setupStatus?.isReady ?? false;
+    });
+  }
+
+  Future<void> _requestPinWidget() async {
+    if (_widgetStatus?.canRequestPin == true) {
+      await _runSetupAction(
+        action: CallScreeningChannel.requestPinFocusWidget,
+        successMessage: 'Đã gửi yêu cầu ghim widget Smart Focus. Kiểm tra màn hình chính hoặc launcher của bạn.',
+        failureMessage: 'Không thể gửi yêu cầu ghim widget từ launcher hiện tại.',
+      );
+      return;
+    }
+
+    setState(() => _setupBusy = true);
+    final openedLauncherSettings = await CallScreeningChannel.openLauncherSettings();
+    final setupStatus = await CallScreeningChannel.getSetupStatus();
+    final widgetStatus = await CallScreeningChannel.getFocusWidgetStatus();
+    if (!mounted) return;
+    setState(() {
+      _setupBusy = false;
+      _setupStatus = setupStatus;
+      _widgetStatus = widgetStatus;
+      _autoBlockEnabled = setupStatus?.isReady ?? false;
+    });
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => const _ManualWidgetGuideSheet(),
+    );
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          openedLauncherSettings
+              ? 'Đã mở cài đặt màn hình chính. Làm theo hướng dẫn để thêm widget Smart Focus.'
+              : 'Launcher không mở được từ ứng dụng. Hãy làm theo hướng dẫn để thêm widget Smart Focus thủ công.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _toggleFocusMode() async {
+    if (_focusSnapshot.isEnabled) {
+      await FocusModeService.disable();
+      if (!mounted) return;
+      setState(() {
+        _focusSnapshot = const FocusModeSnapshot(isEnabled: false, until: null);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đã tắt Smart Focus Mode.')),
+      );
+      return;
+    }
+
+    final duration = await showModalBottomSheet<Duration>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        final options = <Duration>[
+          const Duration(minutes: 30),
+          const Duration(hours: 1),
+          const Duration(hours: 2),
+          const Duration(hours: 8),
+        ];
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Bật Smart Focus Mode',
+                  style: TextStyle(
+                    color: AppTheme.textTitle,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Trong thời gian này, cuộc gọi lạ sẽ bị làm im lặng. Cuộc gọi lặp lại trong 5 phút hoặc số gửi SMS khẩn cấp sẽ được cho qua.',
+                  style: TextStyle(
+                    color: AppTheme.textBody,
+                    fontSize: 14,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                ...options.map(
+                  (option) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(_formatDuration(option)),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.pop(context, option),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (duration == null) return;
+    final snapshot = await FocusModeService.enableFor(duration);
+    if (!mounted) return;
+    setState(() => _focusSnapshot = snapshot);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Đã bật Smart Focus Mode trong ${_formatDuration(duration)}.')),
+    );
+  }
+
+  Future<void> _editEmergencyKeywords() async {
+    final controller = TextEditingController(text: _emergencyKeywords.join(', '));
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Từ khóa SMS khẩn cấp'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Ví dụ: khan cap, cuu me, goi lai. Khi tin nhắn chứa từ khóa, số đó sẽ được cho qua tạm thời.',
+              style: TextStyle(height: 1.45),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'Nhập các từ khóa, cách nhau bằng dấu phẩy',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Lưu'),
+          ),
+        ],
+      ),
+    );
+
+    if (saved != true) return;
+    final keywords = FocusModeService.normalizeKeywords(controller.text.split(','));
+    await FocusModeService.saveEmergencyKeywords(keywords);
+    if (!mounted) return;
+    setState(() => _emergencyKeywords = keywords);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Đã cập nhật từ khóa SMS khẩn cấp.')),
+    );
+  }
+
+  String _formatDuration(Duration duration) {
+    final minutes = duration.inMinutes;
+    if (minutes < 60) {
+      return '$minutes phút';
+    }
+    final hours = minutes ~/ 60;
+    return '$hours giờ';
   }
 
   @override
@@ -130,30 +405,73 @@ class _ProtectionScreenState extends State<ProtectionScreen> {
               onPressed: _enableProtection,
             ),
             const SizedBox(height: 20),
+            if (_supportsNativeScreening) ...[
+              _AndroidSetupCard(
+                status: _setupStatus,
+                busy: _setupBusy,
+                onRefresh: _refreshSetupStatus,
+                onEnableCallScreening: _enableProtection,
+                onGrantSmsPermissions: _requestSmsPermissions,
+                onGrantNotifications: _requestNotificationPermission,
+              ),
+              const SizedBox(height: 16),
+              _FocusWidgetCard(
+                status: _widgetStatus,
+                busy: _setupBusy,
+                onRefresh: _refreshSetupStatus,
+                onRequestPin: _requestPinWidget,
+              ),
+              const SizedBox(height: 16),
+            ],
             _ProtectionTile(
               icon: Icons.shield_outlined,
               iconBackground: const Color(0xFFFF4D3D),
               title: 'Tự động chặn spam',
               subtitle: _supportsNativeScreening
-                  ? 'Bật chặn cuộc gọi và chuyển sang cài đặt Android'
+                  ? (_setupStatus?.callScreeningSupported == false)
+                      ? 'Thiết bị đang ở chế độ giới hạn, chỉ dùng được kiểm tra spam và cấu hình cục bộ'
+                      : (_setupStatus?.isReady ?? false)
+                      ? 'Thiết bị đã sẵn sàng cho chặn cuộc gọi và SMS khẩn cấp'
+                      : 'Cần hoàn tất 3 bước quyền Android ở phần thiết lập nhanh'
                   : 'Chỉ khả dụng trên Android',
               trailing: Switch.adaptive(
                 value: _autoBlockEnabled,
-                onChanged: _toggleProtection,
+                onChanged: _setupBusy || _setupStatus?.callScreeningSupported == false
+                    ? null
+                    : _toggleProtection,
                 activeColor: const Color(0xFF2C7DFF),
               ),
             ),
             const SizedBox(height: 12),
             _ProtectionTile(
-              icon: Icons.pin_outlined,
+              icon: Icons.timelapse_rounded,
               iconBackground: const Color(0xFFFF4D3D),
-              title: 'Chuỗi số',
-              subtitle: 'Nhận diện mẫu số lặp và số nghi ngờ từ heuristics',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Tính năng này đang được hoàn thiện.')),
-                );
-              },
+              title: 'Smart Focus Mode',
+              subtitle: _supportsNativeScreening
+                  ? FocusModeService.describe(_focusSnapshot)
+                  : 'Chỉ hoạt động đầy đủ trên Android',
+              onTap: _supportsNativeScreening ? _toggleFocusMode : null,
+              trailing: TextButton(
+                onPressed: _supportsNativeScreening ? _toggleFocusMode : null,
+                child: Text(_focusSnapshot.isEnabled ? 'Tắt' : 'Bật'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _ProtectionTile(
+              icon: Icons.repeat_rounded,
+              iconBackground: const Color(0xFFFF4D3D),
+              title: 'Cho qua cuộc gọi lặp',
+              subtitle: 'Nếu cùng một số lạ gọi lại trong 5 phút, cuộc gọi thứ hai sẽ được đổ chuông.',
+            ),
+            const SizedBox(height: 12),
+            _ProtectionTile(
+              icon: Icons.sms_outlined,
+              iconBackground: const Color(0xFFFF4D3D),
+              title: 'Từ khóa SMS khẩn cấp',
+              subtitle: _emergencyKeywords.isEmpty
+                  ? 'Chưa có từ khóa. Thêm để người thân nhắn tin xin ưu tiên.'
+                  : 'Đang theo dõi: ${_emergencyKeywords.join(', ')}',
+              onTap: _supportsNativeScreening ? _editEmergencyKeywords : null,
             ),
             const SizedBox(height: 12),
             _ProtectionTile(
@@ -251,6 +569,456 @@ class _ProtectionScreenState extends State<ProtectionScreen> {
                   child: _CommunityReportTile(item: item),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AndroidSetupCard extends StatelessWidget {
+  final ScreeningSetupStatus? status;
+  final bool busy;
+  final Future<void> Function() onRefresh;
+  final Future<void> Function() onEnableCallScreening;
+  final Future<void> Function() onGrantSmsPermissions;
+  final Future<void> Function() onGrantNotifications;
+
+  const _AndroidSetupCard({
+    required this.status,
+    required this.busy,
+    required this.onRefresh,
+    required this.onEnableCallScreening,
+    required this.onGrantSmsPermissions,
+    required this.onGrantNotifications,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final currentStatus = status;
+    final setupComplete = currentStatus?.isReady ?? false;
+    final limitedMode = currentStatus?.isLimitedMode ?? false;
+    final supportMessage = currentStatus?.supportMessage ?? '';
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFECE8),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.admin_panel_settings_outlined, color: AppTheme.primary),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Thiết lập Android',
+                  style: TextStyle(
+                    color: AppTheme.textTitle,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: busy ? null : onRefresh,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Làm mới'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            limitedMode
+                ? (supportMessage.isNotEmpty
+                    ? supportMessage
+                    : 'Thiết bị này không hỗ trợ Call Screening đầy đủ, app sẽ chạy ở chế độ giới hạn.')
+                : setupComplete
+                ? 'Thiết bị đã đủ điều kiện để Smart Focus, SMS khẩn cấp và widget hoạt động ổn định.'
+                : 'Hoàn tất từng bước dưới đây để policy chặn cuộc gọi chạy đúng trên Android.',
+            style: const TextStyle(
+              color: AppTheme.textBody,
+              fontSize: 14,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _SetupStepTile(
+            step: '1',
+            title: 'Bật vai trò Call Screening',
+            subtitle: limitedMode
+                ? 'Tính năng này không khả dụng trên thiết bị hiện tại.'
+                : 'Cho phép Android dùng An Tâm Nghe làm bộ lọc cuộc gọi.',
+            isDone: currentStatus?.callScreeningEnabled ?? false,
+            busy: busy || limitedMode,
+            actionLabel: limitedMode ? 'Không hỗ trợ' : 'Bật ngay',
+            onPressed: onEnableCallScreening,
+          ),
+          const SizedBox(height: 12),
+          _SetupStepTile(
+            step: '2',
+            title: 'Cấp quyền SMS',
+            subtitle: 'Cần cho tính năng nhận tin nhắn khẩn cấp và whitelist tạm thời.',
+            isDone: currentStatus?.smsPermissionsGranted ?? false,
+            busy: busy,
+            actionLabel: 'Cấp quyền',
+            onPressed: onGrantSmsPermissions,
+          ),
+          const SizedBox(height: 12),
+          _SetupStepTile(
+            step: '3',
+            title: 'Cho phép thông báo',
+            subtitle: 'Dùng để báo khi có SMS khẩn cấp mở quyền ưu tiên cho người gọi.',
+            isDone: currentStatus?.notificationsGranted ?? false,
+            busy: busy,
+            actionLabel: 'Bật thông báo',
+            onPressed: onGrantNotifications,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SetupStepTile extends StatelessWidget {
+  final String step;
+  final String title;
+  final String subtitle;
+  final bool isDone;
+  final bool busy;
+  final String actionLabel;
+  final Future<void> Function() onPressed;
+
+  const _SetupStepTile({
+    required this.step,
+    required this.title,
+    required this.subtitle,
+    required this.isDone,
+    required this.busy,
+    required this.actionLabel,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDone ? const Color(0xFFDCFCE7) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: isDone ? const Color(0xFF16A34A) : const Color(0xFFE2E8F0),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: isDone
+                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 18)
+                  : Text(
+                      step,
+                      style: const TextStyle(
+                        color: AppTheme.textTitle,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppTheme.textTitle,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: AppTheme.textBody,
+                    fontSize: 13,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          FilledButton.tonal(
+            onPressed: isDone || busy ? null : onPressed,
+            style: FilledButton.styleFrom(
+              foregroundColor: AppTheme.primary,
+              backgroundColor: const Color(0xFFFFECE8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            child: Text(isDone ? 'Xong' : actionLabel),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FocusWidgetCard extends StatelessWidget {
+  final FocusWidgetStatus? status;
+  final bool busy;
+  final Future<void> Function() onRefresh;
+  final Future<void> Function() onRequestPin;
+
+  const _FocusWidgetCard({
+    required this.status,
+    required this.busy,
+    required this.onRefresh,
+    required this.onRequestPin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final widgetStatus = status;
+    final isPinned = widgetStatus?.isPinned ?? false;
+    final canRequestPin = widgetStatus?.canRequestPin ?? false;
+    final message = widgetStatus?.message ??
+        'Thêm widget An Tâm Nghe để bật Smart Focus chỉ với một chạm từ màn hình chính.';
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFECE8),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.widgets_outlined, color: AppTheme.primary),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Widget Smart Focus',
+                  style: TextStyle(
+                    color: AppTheme.textTitle,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: busy ? null : onRefresh,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Làm mới'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            style: const TextStyle(
+              color: AppTheme.textBody,
+              fontSize: 14,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isPinned ? const Color(0xFFDCFCE7) : const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  isPinned ? Icons.check_circle_rounded : Icons.add_box_outlined,
+                  color: isPinned ? const Color(0xFF16A34A) : AppTheme.primary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    isPinned
+                        ? 'Widget đã có trên màn hình chính'
+                        : canRequestPin
+                        ? 'Launcher hỗ trợ ghim nhanh từ ứng dụng'
+                        : 'Cần ghim thủ công từ màn hình chính',
+                    style: const TextStyle(
+                      color: AppTheme.textTitle,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                FilledButton.tonal(
+                  onPressed: busy || isPinned ? null : onRequestPin,
+                  style: FilledButton.styleFrom(
+                    foregroundColor: AppTheme.primary,
+                    backgroundColor: const Color(0xFFFFECE8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: Text(isPinned ? 'Đã ghim' : (canRequestPin ? 'Ghim nhanh' : 'Xem cách thêm')),
+                ),
+              ],
+            ),
+          ),
+          if (!isPinned && !canRequestPin) ...[
+            const SizedBox(height: 12),
+            const Text(
+              'Cách thêm nhanh: nhấn giữ màn hình chính, chọn Widgets, tìm An Tâm Nghe rồi kéo Smart Focus ra ngoài.',
+              style: TextStyle(
+                color: AppTheme.textBody,
+                fontSize: 13,
+                height: 1.45,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ManualWidgetGuideSheet extends StatelessWidget {
+  const _ManualWidgetGuideSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    const steps = [
+      'Ra màn hình chính và nhấn giữ vào khoảng trống.',
+      'Chọn mục Widgets hoặc Tiện ích.',
+      'Tìm An Tâm Nghe trong danh sách widget.',
+      'Kéo widget Smart Focus ra màn hình chính để bật hoặc tắt nhanh.',
+    ];
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Thêm widget thủ công',
+              style: TextStyle(
+                color: AppTheme.textTitle,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Một số launcher không cho ứng dụng tự ghim widget. Bạn vẫn có thể thêm Smart Focus theo các bước dưới đây.',
+              style: TextStyle(
+                color: AppTheme.textBody,
+                fontSize: 14,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 18),
+            ...steps.asMap().entries.map(
+              (entry) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFECE8),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${entry.key + 1}',
+                          style: const TextStyle(
+                            color: AppTheme.primary,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        entry.value,
+                        style: const TextStyle(
+                          color: AppTheme.textBody,
+                          fontSize: 14,
+                          height: 1.45,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Text('Đã hiểu'),
+              ),
+            ),
           ],
         ),
       ),

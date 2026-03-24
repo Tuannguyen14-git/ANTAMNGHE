@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import '../services/config.dart';
+
 class SpamReport {
   final int id;
   final String phoneNumber;
@@ -37,7 +39,7 @@ class ReportSpamScreen extends StatefulWidget {
 }
 
 class _ReportSpamScreenState extends State<ReportSpamScreen> {
-  final String apiUrl = 'https://localhost:7295/api/SpamReports';
+  String get apiUrl => '${ServiceConfig.baseUrl}/api/SpamReports';
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _reasonController = TextEditingController();
   bool isLoading = false;

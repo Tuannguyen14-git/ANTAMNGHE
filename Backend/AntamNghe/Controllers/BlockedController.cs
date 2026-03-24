@@ -14,49 +14,40 @@ namespace AntamNghe.Controllers
             _context = context;
         }
 
+        private ObjectResult LocalOnly() =>
+            StatusCode(StatusCodes.Status410Gone, new
+            {
+                message = "Blocked numbers are managed on-device only and are no longer stored by the server."
+            });
+
         [HttpGet]
         public IActionResult GetAll()
         {
-            return Ok(_context.BlockedNumbers.OrderByDescending(v => v.CreatedAt).ToList());
+            return LocalOnly();
         }
 
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
-            var blocked = _context.BlockedNumbers.Find(id);
-            if (blocked == null) return NotFound();
-            return Ok(blocked);
+            return LocalOnly();
         }
 
         [HttpPost]
         public IActionResult Create([FromBody] BlockedNumber blocked)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-            blocked.CreatedAt = DateTime.UtcNow;
-            _context.BlockedNumbers.Add(blocked);
-            _context.SaveChanges();
-            return CreatedAtAction(nameof(Get), new { id = blocked.Id }, blocked);
+            return LocalOnly();
         }
 
         [HttpPut("{id}")]
         public IActionResult Update(int id, [FromBody] BlockedNumber blocked)
         {
-            var existing = _context.BlockedNumbers.Find(id);
-            if (existing == null) return NotFound();
-            existing.PhoneNumber = blocked.PhoneNumber;
-            existing.Note = blocked.Note;
-            _context.SaveChanges();
-            return Ok(existing);
+            return LocalOnly();
         }
 
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            var blocked = _context.BlockedNumbers.Find(id);
-            if (blocked == null) return NotFound();
-            _context.BlockedNumbers.Remove(blocked);
-            _context.SaveChanges();
-            return NoContent();
+            return LocalOnly();
         }
     }
 }

@@ -14,50 +14,40 @@ namespace AntamNghe.Controllers
             _context = context;
         }
 
+        private ObjectResult LocalOnly() =>
+            StatusCode(StatusCodes.Status410Gone, new
+            {
+                message = "Call history is kept on-device only and is no longer stored by the server."
+            });
+
         [HttpGet]
         public IActionResult GetAll()
         {
-            return Ok(_context.CallHistories.OrderByDescending(v => v.CallTime).ToList());
+            return LocalOnly();
         }
 
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
-            var item = _context.CallHistories.Find(id);
-            if (item == null) return NotFound();
-            return Ok(item);
+            return LocalOnly();
         }
 
         [HttpPost]
         public IActionResult Create([FromBody] CallHistory item)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-            item.CallTime = DateTime.UtcNow;
-            _context.CallHistories.Add(item);
-            _context.SaveChanges();
-            return CreatedAtAction(nameof(Get), new { id = item.Id }, item);
+            return LocalOnly();
         }
 
         [HttpPut("{id}")]
         public IActionResult Update(int id, [FromBody] CallHistory item)
         {
-            var existing = _context.CallHistories.Find(id);
-            if (existing == null) return NotFound();
-            existing.PhoneNumber = item.PhoneNumber;
-            existing.Note = item.Note;
-            existing.CallTime = item.CallTime;
-            _context.SaveChanges();
-            return Ok(existing);
+            return LocalOnly();
         }
 
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            var item = _context.CallHistories.Find(id);
-            if (item == null) return NotFound();
-            _context.CallHistories.Remove(item);
-            _context.SaveChanges();
-            return NoContent();
+            return LocalOnly();
         }
     }
 }

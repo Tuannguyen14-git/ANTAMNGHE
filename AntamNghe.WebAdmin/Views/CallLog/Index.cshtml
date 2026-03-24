@@ -1,20 +1,14 @@
-﻿@model List<AntamNghe.WebAdmin.Models.CallLog>
+﻿<h2>Call Logs</h2>
 
-<h2>Call Logs</h2>
+<div class="alert alert-warning" role="alert">
+    Call logs are no longer available in WebAdmin.
+</div>
 
-<table class="table">
-    <tr>
-        <th>Phone</th>
-        <th>Time</th>
-        <th>Status</th>
-    </tr>
+<p>
+    Theo kiến trúc quyền riêng tư mới, lịch sử cuộc gọi và quyết định lọc được xử lý trên thiết bị người dùng.
+    Backend không còn lưu hoặc hiển thị dữ liệu này.
+</p>
 
-    @foreach (var item in Model)
-    {
-        <tr>
-            <td>@item.Phone</td>
-            <td>@item.Time</td>
-            <td>@item.Status</td>
-        </tr>
-    }
-</table>
+<p>
+    Dashboard chỉ nên hiển thị dữ liệu cộng đồng như số spam và tổng lượt báo cáo.
+</p>

@@ -1,9 +1,9 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
+import '../services/privacy_local_store.dart';
+
 class EmergencyContact {
-  final int id;
+  final String id;
   final String phoneNumber;
   final String? name;
   final String? note;
@@ -17,15 +17,21 @@ class EmergencyContact {
     required this.createdAt,
   });
 
-  factory EmergencyContact.fromJson(Map<String, dynamic> json) {
-    return EmergencyContact(
-      id: json['id'],
-      phoneNumber: json['phoneNumber'],
-      name: json['name'],
-      note: json['note'],
-      createdAt: DateTime.parse(json['createdAt']),
-    );
-  }
+  factory EmergencyContact.fromEntry(LocalEmergencyContact entry) => EmergencyContact(
+    id: entry.id,
+    phoneNumber: entry.phoneNumber,
+    name: entry.name,
+    note: entry.note,
+    createdAt: entry.createdAt,
+  );
+
+  LocalEmergencyContact toEntry() => LocalEmergencyContact(
+    id: id,
+    phoneNumber: phoneNumber,
+    name: name,
+    note: note,
+    createdAt: createdAt,
+  );
 }
 
 class EmergencyScreen extends StatefulWidget {
@@ -38,9 +44,6 @@ class EmergencyScreen extends StatefulWidget {
 class _EmergencyScreenState extends State<EmergencyScreen> {
   List<EmergencyContact> emergencyList = [];
   bool isLoading = false;
-  final String apiUrl =
-      'https://localhost:7295/api/EmergencyContact'; // Đổi lại nếu backend chạy port khác
-  final String? token = null; // Gán token ở đây hoặc truyền từ ngoài vào
 
   @override
   void initState() {
@@ -48,70 +51,60 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
     _fetchEmergencyList();
   }
 
-  Map<String, String> getHeaders() {
-    final headers = {'Content-Type': 'application/json'};
-    if (token != null) headers['Authorization'] = 'Bearer $token';
-    return headers;
-  }
-
   Future<void> _fetchEmergencyList() async {
     setState(() => isLoading = true);
     try {
-      final res = await http.get(Uri.parse(apiUrl), headers: getHeaders());
-      if (res.statusCode == 200) {
-        final List data = json.decode(res.body);
-        setState(() {
-          emergencyList = data
-              .map((e) => EmergencyContact.fromJson(e))
-              .toList();
-        });
-      }
+      final entries = await PrivacyLocalStore.getEmergencyContacts();
+      setState(() {
+        emergencyList = entries.map(EmergencyContact.fromEntry).toList();
+      });
     } catch (_) {}
     setState(() => isLoading = false);
   }
 
   Future<void> _addEmergency(String phone, [String? name, String? note]) async {
-    final res = await http.post(
-      Uri.parse(apiUrl),
-      headers: getHeaders(),
-      body: json.encode({'phoneNumber': phone, 'name': name, 'note': note}),
-    );
-    if (res.statusCode == 201) {
-      _fetchEmergencyList();
-    }
+    final updated = [
+      ...emergencyList,
+      EmergencyContact(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        phoneNumber: phone,
+        name: name,
+        note: note,
+        createdAt: DateTime.now(),
+      ),
+    ];
+    await PrivacyLocalStore.saveEmergencyContacts(updated.map((item) => item.toEntry()).toList());
+    await _fetchEmergencyList();
   }
 
-  Future<void> _removeEmergency(int id) async {
-    final res = await http.delete(
-      Uri.parse('$apiUrl/$id'),
-      headers: getHeaders(),
-    );
-    if (res.statusCode == 204) {
-      setState(() {
-        emergencyList.removeWhere((v) => v.id == id);
-      });
-    }
+  Future<void> _removeEmergency(String id) async {
+    setState(() {
+      emergencyList.removeWhere((v) => v.id == id);
+    });
+    await PrivacyLocalStore.saveEmergencyContacts(emergencyList.map((item) => item.toEntry()).toList());
   }
 
   Future<void> _updateEmergency(
-    int id,
+    String id,
     String phone, [
     String? name,
     String? note,
   ]) async {
-    final res = await http.put(
-      Uri.parse('$apiUrl/$id'),
-      headers: getHeaders(),
-      body: json.encode({
-        'id': id,
-        'phoneNumber': phone,
-        'name': name,
-        'note': note,
-      }),
-    );
-    if (res.statusCode == 200) {
-      _fetchEmergencyList();
-    }
+    final updated = emergencyList
+        .map(
+          (item) => item.id == id
+              ? EmergencyContact(
+                  id: item.id,
+                  phoneNumber: phone,
+                  name: name,
+                  note: note,
+                  createdAt: item.createdAt,
+                )
+              : item,
+        )
+        .toList();
+    await PrivacyLocalStore.saveEmergencyContacts(updated.map((item) => item.toEntry()).toList());
+    await _fetchEmergencyList();
   }
 
   void _showEditDialog(EmergencyContact item) {

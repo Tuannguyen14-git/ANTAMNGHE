@@ -3,7 +3,7 @@
     public class DashboardViewModel
     {
         public int TotalSpam { get; set; }
-        public int TotalCalls { get; set; }
         public int TotalReports { get; set; }
+        public string? LocalOnlyMessage { get; set; }
     }
 }

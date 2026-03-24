@@ -1,21 +1,26 @@
-import 'package:flutter/material.dart';
 import 'dart:convert';
+
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+
+import '../services/auth_service.dart';
+import '../services/config.dart';
+import '../services/screening_sync_service.dart';
 
 class Vip {
   final int id;
+  final int userId;
   final String phoneNumber;
   final String? name;
 
-  Vip({required this.id, required this.phoneNumber, this.name});
+  Vip({required this.id, required this.userId, required this.phoneNumber, this.name});
 
-  factory Vip.fromJson(Map<String, dynamic> json) {
-    return Vip(
-      id: json['id'],
-      phoneNumber: json['phoneNumber'],
-      name: json['name'],
-    );
-  }
+  factory Vip.fromJson(Map<String, dynamic> json) => Vip(
+    id: json['id'] as int,
+    userId: (json['userId'] as num?)?.toInt() ?? 0,
+    phoneNumber: (json['phone'] ?? json['phoneNumber'] ?? '').toString(),
+    name: json['name']?.toString(),
+  );
 }
 
 class VipListScreen extends StatefulWidget {
@@ -28,8 +33,7 @@ class VipListScreen extends StatefulWidget {
 class _VipListScreenState extends State<VipListScreen> {
   List<Vip> vipList = [];
   bool isLoading = false;
-  final String apiUrl =
-      'https://localhost:7295/api/VipList'; // Đổi lại nếu backend chạy port khác
+  String get apiUrl => '${ServiceConfig.baseUrl}/api/VipContact';
 
   @override
   void initState() {
@@ -40,25 +44,60 @@ class _VipListScreenState extends State<VipListScreen> {
   Future<void> _fetchVipList() async {
     setState(() => isLoading = true);
     try {
-      final res = await http.get(Uri.parse(apiUrl));
+      final userId = await _getCurrentUserId();
+      if (userId == null) {
+        setState(() => vipList = []);
+        return;
+      }
+
+      final res = await http.get(Uri.parse('$apiUrl?userId=$userId'));
       if (res.statusCode == 200) {
-        final List data = json.decode(res.body);
+        final data = json.decode(res.body) as List<dynamic>;
+        final updatedList = data
+            .map((item) => Vip.fromJson(item as Map<String, dynamic>))
+            .toList();
+        await ScreeningSyncService.setVipNumbers(
+          updatedList.map((vip) => vip.phoneNumber).toList(),
+        );
         setState(() {
-          vipList = data.map((e) => Vip.fromJson(e)).toList();
+          vipList = updatedList;
         });
       }
-    } catch (_) {}
-    setState(() => isLoading = false);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không thể tải danh sách ưu tiên từ máy chủ.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
+
+  Future<int?> _getCurrentUserId() async {
+    final user = await AuthService.instance.currentUser();
+    final rawId = user?['id'];
+    if (rawId is int) return rawId;
+    if (rawId is num) return rawId.toInt();
+    return int.tryParse(rawId?.toString() ?? '');
   }
 
   Future<void> _addVip(String phone, [String? name]) async {
+    final userId = await _getCurrentUserId();
+    if (userId == null) return;
+
     final res = await http.post(
       Uri.parse(apiUrl),
       headers: {'Content-Type': 'application/json'},
-      body: json.encode({'phoneNumber': phone, 'name': name}),
+      body: json.encode({
+        'userId': userId,
+        'phone': phone,
+        'name': name,
+      }),
     );
     if (res.statusCode == 201) {
-      _fetchVipList();
+      await _fetchVipList();
     }
   }
 
@@ -68,17 +107,27 @@ class _VipListScreenState extends State<VipListScreen> {
       setState(() {
         vipList.removeWhere((v) => v.id == id);
       });
+      await ScreeningSyncService.setVipNumbers(
+        vipList.map((vip) => vip.phoneNumber).toList(),
+      );
     }
   }
 
   Future<void> _updateVip(int id, String phone, [String? name]) async {
+    final userId = await _getCurrentUserId();
+    if (userId == null) return;
+
     final res = await http.put(
       Uri.parse('$apiUrl/$id'),
       headers: {'Content-Type': 'application/json'},
-      body: json.encode({'id': id, 'phoneNumber': phone, 'name': name}),
+      body: json.encode({
+        'userId': userId,
+        'phone': phone,
+        'name': name,
+      }),
     );
     if (res.statusCode == 200) {
-      _fetchVipList();
+      await _fetchVipList();
     }
   }
 

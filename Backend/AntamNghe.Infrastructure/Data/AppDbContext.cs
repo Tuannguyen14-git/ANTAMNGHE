@@ -19,7 +19,6 @@ namespace AntamNghe.Infrastructure.Data
         public DbSet<User> Users { get; set; }
 
         public DbSet<EmergencyKeyword> EmergencyKeywords { get; set; }
-        public DbSet<VipList> VipLists { get; set; }
         public DbSet<BlockedNumber> BlockedNumbers { get; set; }
         public DbSet<CallHistory> CallHistories { get; set; }
         public DbSet<EmergencyContact> EmergencyContacts { get; set; }

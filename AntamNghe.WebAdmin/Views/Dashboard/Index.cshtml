@@ -2,6 +2,13 @@
 
 <h2>Dashboard</h2>
 
+@if (!string.IsNullOrWhiteSpace(Model.LocalOnlyMessage))
+{
+    <div class="alert alert-warning" role="alert">
+        @Model.LocalOnlyMessage
+    </div>
+}
+
 <div style="display:flex; gap:20px;">
 
     <div style="background:#ff4d4d; padding:20px; color:white;">
@@ -9,9 +16,12 @@
         <h1>@Model.TotalSpam</h1>
     </div>
 
-    <div style="background:#4da6ff; padding:20px; color:white;">
-        <h3>Total Calls</h3>
-        <h1>@Model.TotalCalls</h1>
+    <div style="background:#4da6ff; padding:20px; color:white; max-width:320px;">
+        <h3>Privacy Mode</h3>
+        <h1>On-device</h1>
+        <p style="margin:0; font-size:14px; line-height:1.4;">
+            Dữ liệu cuộc gọi và danh sách cá nhân không còn được lưu trên backend.
+        </p>
     </div>
 
     <div style="background:#33cc33; padding:20px; color:white;">

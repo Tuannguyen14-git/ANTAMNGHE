@@ -1,25 +1,25 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
+import '../services/privacy_local_store.dart';
 import 'report_spam_screen.dart';
 
-// Replace these URLs with your actual backend endpoints if different.
-const String apiUrl = 'https://localhost:7295/api/Blocked';
-const String apiUrlSpam = 'https://localhost:7295/api/SpamReports';
-
 class BlockedNumber {
-  final int id;
+  final String id;
   final String phoneNumber;
   final String? note;
 
   BlockedNumber({required this.id, required this.phoneNumber, this.note});
 
-  factory BlockedNumber.fromJson(Map<String, dynamic> json) => BlockedNumber(
-    id: json['id'] as int,
-    phoneNumber: json['phoneNumber'] as String,
-    note: json['note'] as String?,
+  factory BlockedNumber.fromEntry(LocalBlockedEntry entry) => BlockedNumber(
+    id: entry.id,
+    phoneNumber: entry.phoneNumber,
+    note: entry.note,
+  );
+
+  LocalBlockedEntry toEntry() => LocalBlockedEntry(
+    id: id,
+    phoneNumber: phoneNumber,
+    note: note,
   );
 }
 
@@ -43,66 +43,49 @@ class _BlockedScreenState extends State<BlockedScreen> {
   Future<void> _fetchBlockedList() async {
     setState(() => isLoading = true);
     try {
-      final res = await http.get(Uri.parse(apiUrl));
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body) as List<dynamic>;
-        blockedList = data
-            .map((e) => BlockedNumber.fromJson(e as Map<String, dynamic>))
-            .toList();
-      }
+      blockedList = (await PrivacyLocalStore.getBlockedEntries())
+          .map(BlockedNumber.fromEntry)
+          .toList();
     } catch (_) {}
     if (mounted) setState(() => isLoading = false);
   }
 
   Future<void> _addBlocked(String phone, [String? note]) async {
-    final res = await http.post(
-      Uri.parse(apiUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'phoneNumber': phone, 'note': note}),
-    );
-    if (res.statusCode == 201 || res.statusCode == 200) _fetchBlockedList();
+    final updated = [
+      ...blockedList,
+      BlockedNumber(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        phoneNumber: phone,
+        note: note,
+      ),
+    ];
+    await PrivacyLocalStore.saveBlockedEntries(updated.map((item) => item.toEntry()).toList());
+    await _fetchBlockedList();
   }
 
-  Future<void> _removeBlocked(int id) async {
-    final res = await http.delete(Uri.parse('$apiUrl/$id'));
-    if (res.statusCode == 204 || res.statusCode == 200) {
-      setState(() => blockedList.removeWhere((v) => v.id == id));
-    }
+  Future<void> _removeBlocked(String id) async {
+    setState(() => blockedList.removeWhere((v) => v.id == id));
+    await PrivacyLocalStore.saveBlockedEntries(blockedList.map((item) => item.toEntry()).toList());
   }
 
-  Future<void> _updateBlocked(int id, String phone, [String? note]) async {
-    final res = await http.put(
-      Uri.parse('$apiUrl/$id'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'id': id, 'phoneNumber': phone, 'note': note}),
-    );
-    if (res.statusCode == 200) _fetchBlockedList();
+  Future<void> _updateBlocked(String id, String phone, [String? note]) async {
+    final updated = blockedList
+        .map(
+          (item) => item.id == id
+              ? BlockedNumber(id: item.id, phoneNumber: phone, note: note)
+              : item,
+        )
+        .toList();
+    await PrivacyLocalStore.saveBlockedEntries(updated.map((item) => item.toEntry()).toList());
+    await _fetchBlockedList();
   }
 
   Future<void> _reportSpam(String phone) async {
-    try {
-      final res = await http.post(
-        Uri.parse(apiUrlSpam),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'phoneNumber': phone,
-          'reason': 'reported from app',
-        }),
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            res.statusCode == 201 || res.statusCode == 200
-                ? 'Đã báo cáo số spam'
-                : 'Báo cáo thất bại',
-          ),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Lỗi kết nối')));
-    }
+    await PrivacyLocalStore.addSpamReport(phone);
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Đã lưu báo cáo spam cục bộ trên thiết bị.')));
   }
 
   void _showEditDialog(BlockedNumber blocked) {

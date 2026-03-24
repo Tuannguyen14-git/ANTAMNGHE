@@ -7,48 +7,71 @@ import android.util.Log
 
 class CallScreeningServiceImpl : CallScreeningService() {
     companion object {
-        // Simple in-memory sets for prototype/demo. Will be updated from Flutter via MethodChannel.
-        val spamSet: MutableSet<String> = mutableSetOf()
-        val vipSet: MutableSet<String> = mutableSetOf()
+        private const val TAG = "CallScreening"
+        private const val REPEATED_CALL_WINDOW_MS = 5 * 60 * 1000L
     }
 
     override fun onScreenCall(callDetails: Details) {
         try {
             val handle = callDetails.handle
-            val number = handle?.schemeSpecificPart ?: ""
-            Log.i("CallScreening", "Incoming call from: $number")
+            val number = ScreeningPreferences.normalizeNumber(handle?.schemeSpecificPart ?: "")
+            val spamSet = ScreeningPreferences.getSpamList(applicationContext)
+            val vipSet = ScreeningPreferences.getVipList(applicationContext)
+            Log.i(TAG, "Incoming call from: $number")
 
             val builder = CallResponse.Builder()
 
             if (number.isNotEmpty() && spamSet.contains(number)) {
-                // Block spam: disallow and skip notifications/logs
                 val response = builder.setDisallowCall(true)
                     .setRejectCall(true)
                     .setSkipCallLog(true)
                     .setSkipNotification(true)
                     .build()
                 respondToCall(callDetails, response)
-                Log.i("CallScreening", "Blocked spam number: $number")
+                Log.i(TAG, "Blocked spam number: $number")
                 return
             }
 
             if (number.isNotEmpty() && vipSet.contains(number)) {
-                // Allow VIP: do not disallow
                 val response = builder.setDisallowCall(false).build()
                 respondToCall(callDetails, response)
-                Log.i("CallScreening", "Allowed VIP number: $number")
+                Log.i(TAG, "Allowed VIP number: $number")
                 return
             }
 
-            // Default behavior for unknown numbers: silence incoming call (do not reject)
+            if (number.isNotEmpty() && ScreeningPreferences.isTemporaryAllowed(applicationContext, number)) {
+                val response = builder.setDisallowCall(false).build()
+                respondToCall(callDetails, response)
+                Log.i(TAG, "Allowed temporary emergency number: $number")
+                return
+            }
+
+            if (!ScreeningPreferences.isFocusModeActive(applicationContext)) {
+                val response = builder.setDisallowCall(false).build()
+                respondToCall(callDetails, response)
+                Log.i(TAG, "Allowed call because focus mode is off: $number")
+                return
+            }
+
+            if (number.isNotEmpty() && ScreeningPreferences.registerRepeatedUnknownCall(
+                    applicationContext,
+                    number,
+                    REPEATED_CALL_WINDOW_MS,
+                )
+            ) {
+                val response = builder.setDisallowCall(false).build()
+                respondToCall(callDetails, response)
+                Log.i(TAG, "Allowed repeated unknown call: $number")
+                return
+            }
+
             val response = builder.setDisallowCall(false)
                 .setSilenceCall(true)
                 .build()
             respondToCall(callDetails, response)
-            Log.i("CallScreening", "Silenced unknown number: $number")
+            Log.i(TAG, "Silenced unknown number during focus mode: $number")
         } catch (ex: Exception) {
-            Log.e("CallScreening", "Error screening call: ${ex.message}")
-            // Fallback: allow call
+            Log.e(TAG, "Error screening call: ${ex.message}")
             val response = CallResponse.Builder().setDisallowCall(false).build()
             respondToCall(callDetails, response)
         }

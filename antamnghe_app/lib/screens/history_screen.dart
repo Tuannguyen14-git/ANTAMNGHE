@@ -1,10 +1,10 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+
+import '../services/privacy_local_store.dart';
 import 'report_spam_screen.dart';
 
 class CallHistory {
-  final int id;
+  final String id;
   final String phoneNumber;
   final String? note;
   final DateTime callTime;
@@ -16,14 +16,19 @@ class CallHistory {
     required this.callTime,
   });
 
-  factory CallHistory.fromJson(Map<String, dynamic> json) {
-    return CallHistory(
-      id: json['id'],
-      phoneNumber: json['phoneNumber'],
-      note: json['note'],
-      callTime: DateTime.parse(json['callTime']),
-    );
-  }
+  factory CallHistory.fromEntry(LocalCallHistoryEntry entry) => CallHistory(
+    id: entry.id,
+    phoneNumber: entry.phoneNumber,
+    note: entry.note,
+    callTime: entry.callTime,
+  );
+
+  LocalCallHistoryEntry toEntry() => LocalCallHistoryEntry(
+    id: id,
+    phoneNumber: phoneNumber,
+    note: note,
+    callTime: callTime,
+  );
 }
 
 class HistoryScreen extends StatefulWidget {
@@ -36,9 +41,6 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   List<CallHistory> historyList = [];
   bool isLoading = false;
-  final String apiUrl =
-      'https://localhost:7295/api/CallHistory'; // Đổi lại nếu backend chạy port khác
-  final String? token = null; // Gán token ở đây hoặc truyền từ ngoài vào
 
   @override
   void initState() {
@@ -46,58 +48,44 @@ class _HistoryScreenState extends State<HistoryScreen> {
     _fetchHistoryList();
   }
 
-  Map<String, String> getHeaders() {
-    final headers = {'Content-Type': 'application/json'};
-    if (token != null) headers['Authorization'] = 'Bearer $token';
-    return headers;
-  }
-
   Future<void> _fetchHistoryList() async {
     setState(() => isLoading = true);
     try {
-      final res = await http.get(Uri.parse(apiUrl), headers: getHeaders());
-      if (res.statusCode == 200) {
-        final List data = json.decode(res.body);
-        setState(() {
-          historyList = data.map((e) => CallHistory.fromJson(e)).toList();
-        });
-      }
+      final entries = await PrivacyLocalStore.getHistoryEntries();
+      setState(() {
+        historyList = entries.map(CallHistory.fromEntry).toList();
+      });
     } catch (_) {}
     setState(() => isLoading = false);
   }
 
   Future<void> _addHistory(String phone, [String? note]) async {
-    final res = await http.post(
-      Uri.parse(apiUrl),
-      headers: getHeaders(),
-      body: json.encode({'phoneNumber': phone, 'note': note}),
-    );
-    if (res.statusCode == 201) {
-      _fetchHistoryList();
-    }
+    await PrivacyLocalStore.addCallHistoryEvent(phone, note: note);
+    await _fetchHistoryList();
   }
 
-  Future<void> _removeHistory(int id) async {
-    final res = await http.delete(
-      Uri.parse('$apiUrl/$id'),
-      headers: getHeaders(),
-    );
-    if (res.statusCode == 204) {
-      setState(() {
-        historyList.removeWhere((v) => v.id == id);
-      });
-    }
+  Future<void> _removeHistory(String id) async {
+    setState(() {
+      historyList.removeWhere((v) => v.id == id);
+    });
+    await PrivacyLocalStore.saveHistoryEntries(historyList.map((item) => item.toEntry()).toList());
   }
 
-  Future<void> _updateHistory(int id, String phone, [String? note]) async {
-    final res = await http.put(
-      Uri.parse('$apiUrl/$id'),
-      headers: getHeaders(),
-      body: json.encode({'id': id, 'phoneNumber': phone, 'note': note}),
-    );
-    if (res.statusCode == 200) {
-      _fetchHistoryList();
-    }
+  Future<void> _updateHistory(String id, String phone, [String? note]) async {
+    final updated = historyList
+        .map(
+          (item) => item.id == id
+              ? CallHistory(
+                  id: item.id,
+                  phoneNumber: phone,
+                  note: note,
+                  callTime: item.callTime,
+                )
+              : item,
+        )
+        .toList();
+    await PrivacyLocalStore.saveHistoryEntries(updated.map((item) => item.toEntry()).toList());
+    await _fetchHistoryList();
   }
 
   void _showEditDialog(CallHistory item) {
