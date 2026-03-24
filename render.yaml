@@ -6,10 +6,10 @@ databases:
 services:
   - type: web
     name: antamnghe-api
-    runtime: dotnet
-    rootDir: Backend/AntamNghe
-    buildCommand: dotnet publish -c Release -o ./publish
-    startCommand: dotnet ./publish/AntamNghe.dll
+    runtime: docker
+    dockerfilePath: ./Backend/AntamNghe/Dockerfile
+    dockerContext: ./Backend
+    healthCheckPath: /healthz
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production

@@ -6,7 +6,7 @@ File [render.yaml](c:/HocTap/AntamNghe/render.yaml) da duoc them de ban deploy n
 
 - Service API: `Backend/AntamNghe`
 - Database: PostgreSQL tren Render
-- Runtime: .NET 8
+- Runtime: Docker build tu `Backend/AntamNghe/Dockerfile`
 - Tu dong chay migration khi startup neu `Database__RunMigrationsOnStartup=true`
 
 ## Buoc deploy
@@ -16,6 +16,8 @@ File [render.yaml](c:/HocTap/AntamNghe/render.yaml) da duoc them de ban deploy n
 3. Chon repo `ANTAMNGHE`.
 4. Render se doc file `render.yaml` o root repo.
 5. Tao service `antamnghe-api` va database `antamnghe-db`.
+
+Neu Render hien thong bao `A Blueprint file was found, but there was an issue`, nguyen nhan la blueprint cu dung `runtime: dotnet`, trong khi Render Blueprint khong nhan gia tri nay. Repo nay da duoc doi sang `runtime: docker`.
 
 ## Bien moi truong can thiet
 
@@ -36,6 +38,10 @@ Da co san trong blueprint:
 - `Database__RunMigrationsOnStartup=true`
 - `Jwt__Issuer=AntamNghe`
 - `ConnectionStrings__DefaultConnection` lay tu Render PostgreSQL
+
+Render se build backend bang Dockerfile:
+
+- [Backend/AntamNghe/Dockerfile](c:/HocTap/AntamNghe/Backend/AntamNghe/Dockerfile)
 
 ## Kiem tra sau deploy
 
