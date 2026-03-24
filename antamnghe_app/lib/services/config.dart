@@ -1,11 +1,12 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ServiceConfig {
+  static const String productionBaseUrl = 'https://antamnghe-api.onrender.com';
+
   // Default baseUrl (will be overridden in `main.dart` when using
-  // --dart-define=API_BASE_URL). Defaults chosen to match common dev setup:
-  // - Web:     http://localhost:5195 (backend HTTP dev url)
-  // - Mobile:  http://10.0.2.2:5195 (Android emulator -> host localhost)
+  // --dart-define=API_BASE_URL). Production points at Render by default.
+  // For local development, pass API_BASE_URL explicitly.
   static String baseUrl = kIsWeb
-      ? 'http://localhost:5195'
-      : 'http://10.0.2.2:5195';
+      ? productionBaseUrl
+      : productionBaseUrl;
 }

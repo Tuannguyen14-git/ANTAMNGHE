@@ -19,16 +19,13 @@ import 'screens/privacy_center_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Choose base URL depending on platform. For Flutter Web use localhost,
-  // for mobile/emulator use 10.0.2.2 by default. Override with
+  // Default to the deployed Render backend and allow local/dev overrides via
   // --dart-define=API_BASE_URL=... when needed.
   const envBase = String.fromEnvironment('API_BASE_URL');
   if (envBase.isNotEmpty) {
     ServiceConfig.baseUrl = envBase;
   } else {
-    ServiceConfig.baseUrl = kIsWeb
-        ? 'http://localhost:5195'
-        : 'http://10.0.2.2:5195';
+    ServiceConfig.baseUrl = ServiceConfig.productionBaseUrl;
   }
   final user = await AuthService.instance.currentUser();
   final initial = (user == null) ? '/login' : '/profile';
